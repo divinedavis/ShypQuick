@@ -116,13 +116,10 @@ struct DeliveryRouteView: View {
                         value: String(format: "%.1f mi", route.distance / 1609.344)
                     )
                     statBlock(
-                        title: totalEtaLabel,
-                        value: formatDuration(totalEtaSeconds(baseDelivery: route.expectedTravelTime))
+                        title: etaStat(for: route).label,
+                        value: etaStat(for: route).value
                     )
                     statBlock(title: "Total", value: quote.dollars)
-                }
-                if simulation.driverToPickupSeconds != nil {
-                    etaBreakdown(baseDelivery: route.expectedTravelTime)
                 }
             }
 
@@ -188,27 +185,37 @@ struct DeliveryRouteView: View {
         isLoading = false
     }
 
-    private var totalEtaLabel: String {
-        simulation.driverToPickupSeconds == nil ? "ETA" : "Total ETA"
-    }
-
-    private func totalEtaSeconds(baseDelivery: TimeInterval) -> TimeInterval {
+    private func etaStat(for route: MKRoute) -> (label: String, value: String) {
+        let now = Date()
+        let deliveryDuration = route.expectedTravelTime
         let pickupLeg = simulation.driverToPickupSeconds ?? 0
-        let handling = simulation.driverToPickupSeconds == nil ? 0 : DeliverySimulation.pickupHandlingSeconds
-        return pickupLeg + handling + baseDelivery
-    }
+        let handling = DeliverySimulation.pickupHandlingSeconds
+        let anchor = simulation.dispatchedAt ?? now
 
-    private func etaBreakdown(baseDelivery: TimeInterval) -> some View {
-        let pickupLeg = simulation.driverToPickupSeconds ?? 0
-        return HStack(spacing: 6) {
-            Text("\(formatDuration(pickupLeg)) to pickup")
-            Text("·")
-            Text("\(Int(DeliverySimulation.pickupHandlingSeconds / 60)) min handling")
-            Text("·")
-            Text("\(formatDuration(baseDelivery)) delivery")
+        switch simulation.phase {
+        case .idle, .failed:
+            // No driver yet — show expected delivery time based on the route only.
+            return ("Delivery", formatClock(now.addingTimeInterval(deliveryDuration)))
+
+        case .searching, .assigned, .enRouteToPickup:
+            // Driver is on their way to pickup — show expected pickup time.
+            let pickupAt = anchor.addingTimeInterval(pickupLeg)
+            return ("Pickup by", formatClock(pickupAt))
+
+        case .atPickup, .enRouteToDropoff:
+            // Package in hand — show expected delivery time.
+            let deliveryAt = anchor.addingTimeInterval(pickupLeg + handling + deliveryDuration)
+            return ("Delivery by", formatClock(deliveryAt))
+
+        case .delivered:
+            return ("Delivered at", formatClock(now))
         }
-        .font(.caption2)
-        .foregroundStyle(.secondary)
+    }
+
+    private func formatClock(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter.string(from: date)
     }
 
     private func updateCameraForSimulation() {

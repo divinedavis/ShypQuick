@@ -37,6 +37,8 @@ final class DeliverySimulation: ObservableObject {
     /// Real-world expected travel time (in seconds) for the driver to reach pickup,
     /// computed via MKDirections once a driver is assigned.
     @Published var driverToPickupSeconds: TimeInterval?
+    /// The moment `start()` was called — used as the anchor for absolute ETA times.
+    @Published var dispatchedAt: Date?
 
     /// Flat handling buffer added between pickup-complete and dropoff-complete
     /// to account for the driver loading/handling the item.
@@ -52,6 +54,7 @@ final class DeliverySimulation: ObservableObject {
 
     func start(pickup: CLLocationCoordinate2D, dropoff: CLLocationCoordinate2D) {
         cancel()
+        dispatchedAt = Date()
         phase = .searching
         Task {
             do {
