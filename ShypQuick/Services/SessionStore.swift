@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import SwiftUI
+import Supabase
 
 @MainActor
 final class SessionStore: ObservableObject {
@@ -12,21 +13,65 @@ final class SessionStore: ObservableObject {
 
     @Published var state: State = .loading
 
+    private var client: SupabaseClient { SupabaseService.shared.client }
+
     func bootstrap() async {
-        // TODO: Check Supabase session and load profile.
-        // For now, start signed out.
-        state = .signedOut
+        do {
+            let session = try await client.auth.session
+            let profile = try await loadProfile(userId: session.user.id)
+            state = .signedIn(profile)
+        } catch {
+            state = .signedOut
+        }
     }
 
     func signIn(email: String, password: String) async throws {
-        // TODO: SupabaseService.shared.client.auth.signIn(...)
+        let session = try await client.auth.signIn(email: email, password: password)
+        let profile = try await loadProfile(userId: session.user.id)
+        state = .signedIn(profile)
     }
 
     func signUp(email: String, password: String, fullName: String) async throws {
-        // TODO: SupabaseService.shared.client.auth.signUp(...)
+        let response = try await client.auth.signUp(
+            email: email,
+            password: password,
+            data: ["full_name": .string(fullName)]
+        )
+
+        // If email confirmation is disabled, we get an active session back.
+        if response.session != nil {
+            let profile = try await loadProfile(userId: response.user.id)
+            state = .signedIn(profile)
+        } else {
+            // Email confirmation required — user must click link before signing in.
+            state = .signedOut
+            throw AuthError.emailConfirmationRequired
+        }
     }
 
     func signOut() async {
+        try? await client.auth.signOut()
         state = .signedOut
+    }
+
+    private func loadProfile(userId: UUID) async throws -> Profile {
+        try await client
+            .from("profiles")
+            .select()
+            .eq("id", value: userId)
+            .single()
+            .execute()
+            .value
+    }
+}
+
+enum AuthError: LocalizedError {
+    case emailConfirmationRequired
+
+    var errorDescription: String? {
+        switch self {
+        case .emailConfirmationRequired:
+            return "Check your email and click the confirmation link to finish signing up."
+        }
     }
 }

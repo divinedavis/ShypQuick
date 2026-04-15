@@ -1,12 +1,6 @@
 import Foundation
-#if canImport(Supabase)
 import Supabase
-#endif
 
-/// Thin wrapper around the Supabase Swift SDK.
-///
-/// Add the SDK in Xcode: File → Add Packages → https://github.com/supabase-community/supabase-swift
-/// Then fill in `Secrets.plist` with your project URL and anon key.
 enum SupabaseConfig {
     static var url: URL {
         guard
@@ -32,7 +26,6 @@ enum SupabaseConfig {
     }
 }
 
-#if canImport(Supabase)
 final class SupabaseService {
     static let shared = SupabaseService()
     let client: SupabaseClient
@@ -44,4 +37,3 @@ final class SupabaseService {
         )
     }
 }
-#endif
