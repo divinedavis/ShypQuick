@@ -16,6 +16,7 @@ struct AddressSuggestion: Identifiable, Hashable {
 @MainActor
 final class AddressSearchService: NSObject, ObservableObject, MKLocalSearchCompleterDelegate {
     @Published var suggestions: [AddressSuggestion] = []
+    private(set) var isLocked = false
 
     private let completer = MKLocalSearchCompleter()
     private let recentsKey: String
@@ -38,6 +39,7 @@ final class AddressSearchService: NSObject, ObservableObject, MKLocalSearchCompl
     }
 
     func updateQuery(_ query: String) {
+        if isLocked { return }
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
             suggestions = recentSuggestionIfAny().map { [$0] } ?? []
@@ -45,6 +47,18 @@ final class AddressSearchService: NSObject, ObservableObject, MKLocalSearchCompl
             return
         }
         completer.queryFragment = trimmed
+    }
+
+    /// Called after the user picks a suggestion — clears the list and blocks
+    /// further query updates until `unlock()` is called (when user edits again).
+    func lockAfterSelection() {
+        isLocked = true
+        suggestions = []
+        completer.cancel()
+    }
+
+    func unlock() {
+        isLocked = false
     }
 
     func saveRecent(_ suggestion: AddressSuggestion) {
@@ -81,6 +95,7 @@ final class AddressSearchService: NSObject, ObservableObject, MKLocalSearchCompl
     nonisolated func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
         let results = completer.results
         Task { @MainActor in
+            if self.isLocked { return }
             var merged: [AddressSuggestion] = []
             if let recent = self.recentSuggestionIfAny() {
                 merged.append(recent)

@@ -41,6 +41,13 @@ struct CustomerHomeView: View {
         return PricingService.quote(size: itemSize, pickup: pickup, dropoff: dropoff, sameHour: sameHour)
     }
 
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil, from: nil, for: nil
+        )
+    }
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
@@ -139,9 +146,11 @@ struct CustomerHomeView: View {
                 field: .pickup,
                 search: pickupSearch,
                 selected: { s in
+                    pickupSearch.lockAfterSelection()
                     pickupAddress = s.displayLine
                     activeField = nil
                     pickupSearch.saveRecent(s)
+                    dismissKeyboard()
                     Task {
                         pickupCoord = try? await pickupSearch.resolveCoordinate(for: s)
                     }
@@ -158,9 +167,11 @@ struct CustomerHomeView: View {
                 field: .dropoff,
                 search: dropoffSearch,
                 selected: { s in
+                    dropoffSearch.lockAfterSelection()
                     dropoffAddress = s.displayLine
                     activeField = nil
                     dropoffSearch.saveRecent(s)
+                    dismissKeyboard()
                     Task {
                         dropoffCoord = try? await dropoffSearch.resolveCoordinate(for: s)
                     }
@@ -184,8 +195,12 @@ struct CustomerHomeView: View {
             HStack {
                 Image(systemName: icon).foregroundStyle(iconColor)
                 TextField(placeholder, text: text)
-                    .onTapGesture { activeField = field }
+                    .onTapGesture {
+                        activeField = field
+                        search.unlock()
+                    }
                     .onChange(of: text.wrappedValue) { _, newValue in
+                        if search.isLocked { return }
                         activeField = field
                         search.updateQuery(newValue)
                     }
