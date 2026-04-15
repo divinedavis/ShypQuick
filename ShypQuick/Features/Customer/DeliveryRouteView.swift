@@ -8,6 +8,7 @@ struct DeliveryRouteView: View {
     let dropoff: CLLocationCoordinate2D
     let quote: PricingService.Quote
 
+    @StateObject private var simulation = DeliverySimulation()
     @State private var route: MKRoute?
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var isLoading = true
@@ -24,6 +25,17 @@ struct DeliveryRouteView: View {
                     MapPolyline(route.polyline)
                         .stroke(.blue, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
                 }
+                if let driverPos = simulation.driverPosition {
+                    Annotation("Driver", coordinate: driverPos) {
+                        ZStack {
+                            Circle().fill(.white).frame(width: 36, height: 36)
+                            Image(systemName: "car.fill")
+                                .foregroundStyle(.blue)
+                                .font(.title3)
+                        }
+                        .shadow(radius: 4)
+                    }
+                }
             }
             .mapStyle(.standard(elevation: .realistic))
             .overlay(alignment: .top) {
@@ -31,6 +43,9 @@ struct DeliveryRouteView: View {
                     ProgressView("Calculating route…")
                         .padding()
                         .background(.regularMaterial, in: Capsule())
+                        .padding(.top, 12)
+                } else if simulation.phase != .idle {
+                    phaseBanner
                         .padding(.top, 12)
                 }
             }
@@ -40,6 +55,32 @@ struct DeliveryRouteView: View {
         .navigationTitle("Driver route")
         .navigationBarTitleDisplayMode(.inline)
         .task { await calculateRoute() }
+        .onDisappear { simulation.cancel() }
+    }
+
+    private var phaseBanner: some View {
+        HStack(spacing: 8) {
+            Image(systemName: phaseIcon)
+            Text(simulation.phase.headline).font(.subheadline.bold())
+            if let eta = simulation.etaSeconds, eta > 0 {
+                Text("· \(eta)s").font(.caption).foregroundStyle(.secondary)
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .background(.regularMaterial, in: Capsule())
+    }
+
+    private var phaseIcon: String {
+        switch simulation.phase {
+        case .idle: return "clock"
+        case .searching: return "magnifyingglass"
+        case .assigned: return "person.fill.checkmark"
+        case .enRouteToPickup: return "car.fill"
+        case .atPickup: return "shippingbox.fill"
+        case .enRouteToDropoff: return "arrow.right.circle.fill"
+        case .delivered: return "checkmark.seal.fill"
+        case .failed: return "exclamationmark.triangle.fill"
+        }
     }
 
     private var routeSummaryCard: some View {
@@ -72,17 +113,36 @@ struct DeliveryRouteView: View {
             }
 
             Button {
-                // TODO: dispatch + save delivery to Supabase
+                simulation.start(pickup: pickup, dropoff: dropoff)
             } label: {
-                Text("Find a driver")
+                Text(findDriverButtonLabel)
                     .bold()
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 4)
             }
             .buttonStyle(.borderedProminent)
+            .disabled(isFindDriverDisabled)
         }
         .padding()
         .background(.regularMaterial)
+    }
+
+    private var findDriverButtonLabel: String {
+        switch simulation.phase {
+        case .idle, .failed: return "Find a driver"
+        case .searching: return "Searching…"
+        case .assigned, .enRouteToPickup: return "Driver en route"
+        case .atPickup: return "At pickup"
+        case .enRouteToDropoff: return "Delivering"
+        case .delivered: return "Delivered ✓"
+        }
+    }
+
+    private var isFindDriverDisabled: Bool {
+        switch simulation.phase {
+        case .idle, .failed: return false
+        default: return true
+        }
     }
 
     private func statBlock(title: String, value: String) -> some View {
