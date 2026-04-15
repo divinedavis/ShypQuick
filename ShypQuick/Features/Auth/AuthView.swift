@@ -37,15 +37,24 @@ struct AuthView: View {
                         .textFieldStyle(.roundedBorder)
 
                     if isSignUp {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text("I'm signing up as a")
-                                .font(.caption)
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("I want to sign up as")
+                                .font(.footnote.bold())
                                 .foregroundStyle(.secondary)
-                            Picker("Role", selection: $role) {
-                                Label("Customer", systemImage: "shippingbox.fill").tag(UserRole.customer)
-                                Label("Driver", systemImage: "car.fill").tag(UserRole.driver)
+                            HStack(spacing: 10) {
+                                roleCard(
+                                    choice: .customer,
+                                    title: "Customer",
+                                    subtitle: "Send packages",
+                                    icon: "shippingbox.fill"
+                                )
+                                roleCard(
+                                    choice: .driver,
+                                    title: "Driver",
+                                    subtitle: "Deliver & earn",
+                                    icon: "car.fill"
+                                )
                             }
-                            .pickerStyle(.segmented)
                         }
                         .padding(.top, 4)
                     }
@@ -77,6 +86,42 @@ struct AuthView: View {
             }
             .padding()
         }
+    }
+
+    @ViewBuilder
+    private func roleCard(
+        choice: UserRole,
+        title: String,
+        subtitle: String,
+        icon: String
+    ) -> some View {
+        let isSelected = role == choice
+        Button {
+            role = choice
+        } label: {
+            VStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundStyle(isSelected ? Color.white : Color.accentColor)
+                Text(title)
+                    .font(.subheadline.bold())
+                    .foregroundStyle(isSelected ? Color.white : Color.primary)
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(isSelected ? Color.white.opacity(0.85) : Color.secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? Color.accentColor : Color(.secondarySystemBackground))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(isSelected ? Color.accentColor : Color.gray.opacity(0.3), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
     }
 
     private func submit() {

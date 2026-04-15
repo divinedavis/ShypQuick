@@ -17,27 +17,22 @@ struct RootView: View {
 
 struct MainTabView: View {
     let profile: Profile
-    @State private var activeRole: UserRole
-
-    init(profile: Profile) {
-        self.profile = profile
-        _activeRole = State(initialValue: profile.role == .driver ? .driver : .customer)
-    }
 
     var body: some View {
         TabView {
-            if activeRole == .customer {
-                CustomerHomeView()
-                    .tabItem { Label("Send", systemImage: "shippingbox.fill") }
-            } else {
+            switch profile.role {
+            case .driver:
                 DriverHomeView()
                     .tabItem { Label("Drive", systemImage: "car.fill") }
+            case .customer, .both:
+                CustomerHomeView()
+                    .tabItem { Label("Send", systemImage: "shippingbox.fill") }
             }
 
             HistoryView()
                 .tabItem { Label("History", systemImage: "clock.fill") }
 
-            ProfileView(activeRole: $activeRole)
+            ProfileView(profile: profile)
                 .tabItem { Label("Profile", systemImage: "person.fill") }
         }
     }

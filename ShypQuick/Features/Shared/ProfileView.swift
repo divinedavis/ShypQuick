@@ -2,17 +2,18 @@ import SwiftUI
 
 struct ProfileView: View {
     @EnvironmentObject var session: SessionStore
-    @Binding var activeRole: UserRole
+    let profile: Profile
 
     var body: some View {
         NavigationStack {
             List {
-                Section("Role") {
-                    Picker("Active role", selection: $activeRole) {
-                        Text("Customer").tag(UserRole.customer)
-                        Text("Driver").tag(UserRole.driver)
+                Section("Account") {
+                    LabeledContent("Name", value: profile.fullName ?? "—")
+                    LabeledContent("Role") {
+                        Label(roleLabel, systemImage: roleIcon)
+                            .labelStyle(.titleAndIcon)
+                            .foregroundStyle(.tint)
                     }
-                    .pickerStyle(.segmented)
                 }
 
                 Section {
@@ -22,6 +23,22 @@ struct ProfileView: View {
                 }
             }
             .navigationTitle("Profile")
+        }
+    }
+
+    private var roleLabel: String {
+        switch profile.role {
+        case .customer: return "Customer"
+        case .driver:   return "Driver"
+        case .both:     return "Customer & Driver"
+        }
+    }
+
+    private var roleIcon: String {
+        switch profile.role {
+        case .customer: return "shippingbox.fill"
+        case .driver:   return "car.fill"
+        case .both:     return "person.2.fill"
         }
     }
 }
