@@ -46,6 +46,23 @@ struct CustomerHomeView: View {
         return PricingService.quote(size: itemSize, pickup: pickup, dropoff: dropoff, sameHour: sameHour)
     }
 
+    private func resetForm() {
+        pickupAddress = ""
+        dropoffAddress = ""
+        pickupCoord = nil
+        dropoffCoord = nil
+        selectedCategory = nil
+        itemSize = .small
+        sameHour = false
+        activeField = nil
+        pickupSearch.unlock()
+        dropoffSearch.unlock()
+        pickupSearch.updateQuery("")
+        dropoffSearch.updateQuery("")
+        didPrefillHome = false
+        prefillHomeAddressIfNeeded()
+    }
+
     private func prefillHomeAddressIfNeeded() {
         guard !didPrefillHome,
               pickupAddress.isEmpty,
@@ -154,6 +171,13 @@ struct CustomerHomeView: View {
                 location.requestPermission()
                 location.startUpdating()
                 prefillHomeAddressIfNeeded()
+            }
+            .onChange(of: routeRequest) { oldValue, newValue in
+                // When the user returns from the route view (newValue == nil),
+                // reset the form so they start a fresh delivery.
+                if oldValue != nil && newValue == nil {
+                    resetForm()
+                }
             }
             .onChange(of: location.currentLocation) { _, loc in
                 guard let coord = loc?.coordinate else { return }
