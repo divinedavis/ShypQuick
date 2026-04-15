@@ -8,6 +8,7 @@ struct DeliveryRouteView: View {
     let dropoff: CLLocationCoordinate2D
     let quote: PricingService.Quote
 
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var simulation = DeliverySimulation()
     @State private var route: MKRoute?
     @State private var cameraPosition: MapCameraPosition = .automatic
@@ -124,7 +125,11 @@ struct DeliveryRouteView: View {
             }
 
             Button {
-                simulation.start(pickup: pickup, dropoff: dropoff)
+                if simulation.phase == .delivered {
+                    dismiss()
+                } else {
+                    simulation.start(pickup: pickup, dropoff: dropoff)
+                }
             } label: {
                 Text(findDriverButtonLabel)
                     .bold()
@@ -145,13 +150,13 @@ struct DeliveryRouteView: View {
         case .assigned, .enRouteToPickup: return "Driver en route"
         case .atPickup: return "At pickup"
         case .enRouteToDropoff: return "Delivering"
-        case .delivered: return "Delivered ✓"
+        case .delivered: return "OK"
         }
     }
 
     private var isFindDriverDisabled: Bool {
         switch simulation.phase {
-        case .idle, .failed: return false
+        case .idle, .failed, .delivered: return false
         default: return true
         }
     }
