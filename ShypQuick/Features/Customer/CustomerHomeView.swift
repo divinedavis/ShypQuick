@@ -16,6 +16,7 @@ struct CustomerHomeView: View {
     @State private var didPrefillHome = false
     @State private var itemSize: ItemSize = .small
     @State private var selectedCategory: ItemCategory?
+    @State private var attachedPhotoData: Data?
     @State private var sameHour = false
     @State private var routeRequest: RouteRequest?
     @State private var showingCategorySheet = false
@@ -142,7 +143,7 @@ struct CustomerHomeView: View {
             .navigationTitle("Send a package")
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showingCategorySheet) {
-                ItemCategorySheet { category in
+                ItemCategorySheet { category, _ in
                     selectedCategory = category
                     itemSize = category.size
                     guard let p = pickupCoord, let d = dropoffCoord else { return }
