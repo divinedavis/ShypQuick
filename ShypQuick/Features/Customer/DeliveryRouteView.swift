@@ -14,6 +14,7 @@ struct DeliveryRouteView: View {
     @State private var cameraPosition: MapCameraPosition = .automatic
     @State private var isLoading = true
     @State private var errorMessage: String?
+    @State private var showingPurchaseSheet = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -68,6 +69,17 @@ struct DeliveryRouteView: View {
         .navigationBarTitleDisplayMode(.inline)
         .task { await calculateRoute() }
         .onDisappear { simulation.cancel() }
+        .onChange(of: simulation.phase) { _, newPhase in
+            if newPhase == .delivered {
+                showingPurchaseSheet = true
+            }
+        }
+        .sheet(isPresented: $showingPurchaseSheet) {
+            PurchaseSourceSheet { _ in
+                showingPurchaseSheet = false
+                dismiss()
+            }
+        }
     }
 
     private var phaseBanner: some View {
@@ -156,7 +168,8 @@ struct DeliveryRouteView: View {
 
     private var isFindDriverDisabled: Bool {
         switch simulation.phase {
-        case .idle, .failed, .delivered: return false
+        case .idle, .failed: return false
+        case .delivered: return false
         default: return true
         }
     }
