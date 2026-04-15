@@ -34,6 +34,13 @@ final class DeliverySimulation: ObservableObject {
     @Published var driverPosition: CLLocationCoordinate2D?
     @Published var driverName: String?
     @Published var etaSeconds: Int?
+    /// Real-world expected travel time (in seconds) for the driver to reach pickup,
+    /// computed via MKDirections once a driver is assigned.
+    @Published var driverToPickupSeconds: TimeInterval?
+
+    /// Flat handling buffer added between pickup-complete and dropoff-complete
+    /// to account for the driver loading/handling the item.
+    static let pickupHandlingSeconds: TimeInterval = 90
 
     private let client: SupabaseClient
     private let stepDurationSeconds: Double = 0.1 // tick interval
@@ -55,6 +62,10 @@ final class DeliverySimulation: ObservableObject {
                 driverName = driver.name
                 driverPosition = driver.location
                 phase = .assigned(driverName: driver.name)
+
+                driverToPickupSeconds = try? await routeTravelTime(
+                    from: driver.location, to: pickup
+                )
 
                 try? await Task.sleep(nanoseconds: 900_000_000)
                 phase = .enRouteToPickup
@@ -160,6 +171,18 @@ final class DeliverySimulation: ObservableObject {
             try? await Task.sleep(nanoseconds: UInt64(stepDurationSeconds * 1_000_000_000))
         }
         etaSeconds = 0
+    }
+
+    private func routeTravelTime(
+        from: CLLocationCoordinate2D,
+        to: CLLocationCoordinate2D
+    ) async throws -> TimeInterval {
+        let request = MKDirections.Request()
+        request.source = MKMapItem(location: CLLocation(latitude: from.latitude, longitude: from.longitude), address: nil)
+        request.destination = MKMapItem(location: CLLocation(latitude: to.latitude, longitude: to.longitude), address: nil)
+        request.transportType = .automobile
+        let response = try await MKDirections(request: request).calculate()
+        return response.routes.first?.expectedTravelTime ?? 0
     }
 
     private func routePoints(

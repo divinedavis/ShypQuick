@@ -116,10 +116,13 @@ struct DeliveryRouteView: View {
                         value: String(format: "%.1f mi", route.distance / 1609.344)
                     )
                     statBlock(
-                        title: "ETA",
-                        value: formatDuration(route.expectedTravelTime)
+                        title: totalEtaLabel,
+                        value: formatDuration(totalEtaSeconds(baseDelivery: route.expectedTravelTime))
                     )
                     statBlock(title: "Total", value: quote.dollars)
+                }
+                if simulation.driverToPickupSeconds != nil {
+                    etaBreakdown(baseDelivery: route.expectedTravelTime)
                 }
             }
 
@@ -183,6 +186,29 @@ struct DeliveryRouteView: View {
             errorMessage = "Couldn't calculate route: \(error.localizedDescription)"
         }
         isLoading = false
+    }
+
+    private var totalEtaLabel: String {
+        simulation.driverToPickupSeconds == nil ? "ETA" : "Total ETA"
+    }
+
+    private func totalEtaSeconds(baseDelivery: TimeInterval) -> TimeInterval {
+        let pickupLeg = simulation.driverToPickupSeconds ?? 0
+        let handling = simulation.driverToPickupSeconds == nil ? 0 : DeliverySimulation.pickupHandlingSeconds
+        return pickupLeg + handling + baseDelivery
+    }
+
+    private func etaBreakdown(baseDelivery: TimeInterval) -> some View {
+        let pickupLeg = simulation.driverToPickupSeconds ?? 0
+        return HStack(spacing: 6) {
+            Text("\(formatDuration(pickupLeg)) to pickup")
+            Text("·")
+            Text("\(Int(DeliverySimulation.pickupHandlingSeconds / 60)) min handling")
+            Text("·")
+            Text("\(formatDuration(baseDelivery)) delivery")
+        }
+        .font(.caption2)
+        .foregroundStyle(.secondary)
     }
 
     private func updateCameraForSimulation() {
