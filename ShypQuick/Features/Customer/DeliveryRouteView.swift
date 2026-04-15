@@ -26,18 +26,29 @@ struct DeliveryRouteView: View {
                         .stroke(.blue, style: StrokeStyle(lineWidth: 5, lineCap: .round, lineJoin: .round))
                 }
                 if let driverPos = simulation.driverPosition {
-                    Annotation("Driver", coordinate: driverPos) {
+                    Annotation(simulation.driverName ?? "Driver", coordinate: driverPos) {
                         ZStack {
-                            Circle().fill(.white).frame(width: 36, height: 36)
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 44, height: 44)
+                                .shadow(color: .black.opacity(0.25), radius: 6, y: 2)
+                            Circle()
+                                .strokeBorder(Color.blue, lineWidth: 3)
+                                .frame(width: 44, height: 44)
                             Image(systemName: "car.fill")
                                 .foregroundStyle(.blue)
                                 .font(.title3)
                         }
-                        .shadow(radius: 4)
                     }
                 }
             }
             .mapStyle(.standard(elevation: .realistic))
+            .onChange(of: simulation.driverPosition?.latitude) { _, _ in
+                updateCameraForSimulation()
+            }
+            .onChange(of: simulation.phase) { _, _ in
+                updateCameraForSimulation()
+            }
             .overlay(alignment: .top) {
                 if isLoading {
                     ProgressView("Calculating route…")
@@ -172,6 +183,36 @@ struct DeliveryRouteView: View {
             errorMessage = "Couldn't calculate route: \(error.localizedDescription)"
         }
         isLoading = false
+    }
+
+    private func updateCameraForSimulation() {
+        guard let driver = simulation.driverPosition else { return }
+        let target: CLLocationCoordinate2D
+        switch simulation.phase {
+        case .enRouteToPickup, .assigned, .searching, .atPickup:
+            target = pickup
+        case .enRouteToDropoff, .delivered:
+            target = dropoff
+        default:
+            return
+        }
+        let rect = boundingRect(for: [driver, target], paddingMeters: 600)
+        withAnimation(.easeInOut(duration: 0.8)) {
+            cameraPosition = .rect(rect)
+        }
+    }
+
+    private func boundingRect(
+        for coords: [CLLocationCoordinate2D],
+        paddingMeters: Double
+    ) -> MKMapRect {
+        let points = coords.map { MKMapPoint($0) }
+        var rect = MKMapRect.null
+        for p in points {
+            rect = rect.union(MKMapRect(x: p.x, y: p.y, width: 0, height: 0))
+        }
+        let padding = paddingMeters * MKMapPointsPerMeterAtLatitude(coords.first?.latitude ?? 0)
+        return rect.insetBy(dx: -padding, dy: -padding)
     }
 
     private func formatDuration(_ seconds: TimeInterval) -> String {
