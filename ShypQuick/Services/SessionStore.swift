@@ -31,11 +31,14 @@ final class SessionStore: ObservableObject {
         state = .signedIn(profile)
     }
 
-    func signUp(email: String, password: String, fullName: String) async throws {
+    func signUp(email: String, password: String, fullName: String, role: UserRole) async throws {
         let response = try await client.auth.signUp(
             email: email,
             password: password,
-            data: ["full_name": .string(fullName)]
+            data: [
+                "full_name": .string(fullName),
+                "role": .string(role.rawValue)
+            ]
         )
 
         // If email confirmation is disabled, we get an active session back.
