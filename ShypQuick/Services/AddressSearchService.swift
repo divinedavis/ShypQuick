@@ -42,7 +42,7 @@ final class AddressSearchService: NSObject, ObservableObject, MKLocalSearchCompl
         if isLocked { return }
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            suggestions = recentSuggestionIfAny().map { [$0] } ?? []
+            suggestions = []
             completer.cancel()
             return
         }
