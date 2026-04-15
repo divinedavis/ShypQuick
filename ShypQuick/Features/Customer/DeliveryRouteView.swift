@@ -194,8 +194,8 @@ struct DeliveryRouteView: View {
 
         switch simulation.phase {
         case .idle, .failed:
-            // No driver yet — show expected delivery time based on the route only.
-            return ("Delivery", formatClock(now.addingTimeInterval(deliveryDuration)))
+            // No driver yet — times of day are unknown until we dispatch.
+            return ("ETA", "TBD")
 
         case .searching, .assigned, .enRouteToPickup:
             // Driver is on their way to pickup — show expected pickup time.
