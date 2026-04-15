@@ -52,6 +52,24 @@ final class SessionStore: ObservableObject {
         }
     }
 
+    func updateHomeAddress(address: String, lat: Double, lng: Double) async throws {
+        guard case .signedIn(var profile) = state else { return }
+        struct HomeUpdate: Encodable {
+            let home_address: String
+            let home_lat: Double
+            let home_lng: Double
+        }
+        try await client
+            .from("profiles")
+            .update(HomeUpdate(home_address: address, home_lat: lat, home_lng: lng))
+            .eq("id", value: profile.id)
+            .execute()
+        profile.homeAddress = address
+        profile.homeLat = lat
+        profile.homeLng = lng
+        state = .signedIn(profile)
+    }
+
     func signOut() async {
         try? await client.auth.signOut()
         state = .signedOut

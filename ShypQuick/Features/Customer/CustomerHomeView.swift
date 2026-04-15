@@ -3,6 +3,8 @@ import MapKit
 import CoreLocation
 
 struct CustomerHomeView: View {
+    let profile: Profile
+
     @StateObject private var location = LocationService.shared
     @StateObject private var pickupSearch = AddressSearchService(recentsKey: "recent_pickup_address")
     @StateObject private var dropoffSearch = AddressSearchService(recentsKey: "recent_dropoff_address")
@@ -11,6 +13,7 @@ struct CustomerHomeView: View {
     @State private var dropoffAddress = ""
     @State private var pickupCoord: CLLocationCoordinate2D?
     @State private var dropoffCoord: CLLocationCoordinate2D?
+    @State private var didPrefillHome = false
     @State private var itemSize: ItemSize = .small
     @State private var selectedCategory: ItemCategory?
     @State private var sameHour = false
@@ -41,6 +44,18 @@ struct CustomerHomeView: View {
     private var currentQuote: PricingService.Quote? {
         guard let pickup = pickupCoord, let dropoff = dropoffCoord else { return nil }
         return PricingService.quote(size: itemSize, pickup: pickup, dropoff: dropoff, sameHour: sameHour)
+    }
+
+    private func prefillHomeAddressIfNeeded() {
+        guard !didPrefillHome,
+              pickupAddress.isEmpty,
+              let home = profile.homeAddress,
+              let lat = profile.homeLat,
+              let lng = profile.homeLng else { return }
+        didPrefillHome = true
+        pickupAddress = home
+        pickupCoord = CLLocationCoordinate2D(latitude: lat, longitude: lng)
+        pickupSearch.lockAfterSelection()
     }
 
     private func dismissKeyboard() {
@@ -138,6 +153,7 @@ struct CustomerHomeView: View {
             .task {
                 location.requestPermission()
                 location.startUpdating()
+                prefillHomeAddressIfNeeded()
             }
             .onChange(of: location.currentLocation) { _, loc in
                 guard let coord = loc?.coordinate else { return }

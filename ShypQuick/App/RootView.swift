@@ -25,7 +25,7 @@ struct MainTabView: View {
                 DriverHomeView()
                     .tabItem { Label("Drive", systemImage: "car.fill") }
             case .customer, .both:
-                CustomerHomeView()
+                CustomerHomeView(profile: profile)
                     .tabItem { Label("Send", systemImage: "shippingbox.fill") }
             }
 
