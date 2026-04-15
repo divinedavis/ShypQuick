@@ -12,8 +12,20 @@ struct CustomerHomeView: View {
     @State private var pickupCoord: CLLocationCoordinate2D?
     @State private var dropoffCoord: CLLocationCoordinate2D?
     @State private var itemSize: ItemSize = .small
-    @State private var showingRequest = false
+    @State private var sameHour = false
+    @State private var routeRequest: RouteRequest?
     @State private var activeField: Field?
+
+    struct RouteRequest: Hashable {
+        let pickupAddress: String
+        let dropoffAddress: String
+        let pickupLat: Double
+        let pickupLng: Double
+        let dropoffLat: Double
+        let dropoffLng: Double
+        let size: ItemSize
+        let sameHour: Bool
+    }
 
     @State private var cameraPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -23,6 +35,11 @@ struct CustomerHomeView: View {
     )
 
     enum Field: Hashable { case pickup, dropoff }
+
+    private var currentQuote: PricingService.Quote? {
+        guard let pickup = pickupCoord, let dropoff = dropoffCoord else { return nil }
+        return PricingService.quote(size: itemSize, pickup: pickup, dropoff: dropoff, sameHour: sameHour)
+    }
 
     var body: some View {
         NavigationStack {
@@ -42,8 +59,33 @@ struct CustomerHomeView: View {
                     }
                     .pickerStyle(.segmented)
 
+                    Toggle(isOn: $sameHour) {
+                        Label("Need it within the hour (+$30)", systemImage: "bolt.fill")
+                            .font(.subheadline)
+                    }
+                    .tint(.orange)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 8)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+
+                    if let quote = currentQuote {
+                        HStack {
+                            Text("Estimate").font(.subheadline).foregroundStyle(.secondary)
+                            Spacer()
+                            Text(quote.dollars).font(.title3.bold())
+                        }
+                        .padding(.horizontal, 12)
+                    }
+
                     Button {
-                        showingRequest = true
+                        guard let p = pickupCoord, let d = dropoffCoord else { return }
+                        routeRequest = RouteRequest(
+                            pickupAddress: pickupAddress,
+                            dropoffAddress: dropoffAddress,
+                            pickupLat: p.latitude, pickupLng: p.longitude,
+                            dropoffLat: d.latitude, dropoffLng: d.longitude,
+                            size: itemSize, sameHour: sameHour
+                        )
                     } label: {
                         Text("Request ShypQuick")
                             .bold()
@@ -57,11 +99,16 @@ struct CustomerHomeView: View {
             }
             .navigationTitle("Send a package")
             .navigationBarTitleDisplayMode(.inline)
-            .sheet(isPresented: $showingRequest) {
-                DeliveryConfirmationView(
-                    pickup: pickupAddress,
-                    dropoff: dropoffAddress,
-                    size: itemSize
+            .navigationDestination(item: $routeRequest) { req in
+                let pickup = CLLocationCoordinate2D(latitude: req.pickupLat, longitude: req.pickupLng)
+                let dropoff = CLLocationCoordinate2D(latitude: req.dropoffLat, longitude: req.dropoffLng)
+                let quote = PricingService.quote(size: req.size, pickup: pickup, dropoff: dropoff, sameHour: req.sameHour)
+                DeliveryRouteView(
+                    pickupAddress: req.pickupAddress,
+                    dropoffAddress: req.dropoffAddress,
+                    pickup: pickup,
+                    dropoff: dropoff,
+                    quote: quote
                 )
             }
             .task {
@@ -180,22 +227,3 @@ struct CustomerHomeView: View {
     }
 }
 
-struct DeliveryConfirmationView: View {
-    let pickup: String
-    let dropoff: String
-    let size: ItemSize
-
-    var body: some View {
-        VStack(spacing: 16) {
-            Text("Confirm delivery").font(.title2.bold())
-            Text("From: \(pickup)").font(.subheadline)
-            Text("To: \(dropoff)").font(.subheadline)
-            Text("Size: \(size.rawValue.capitalized)").font(.subheadline)
-            Text("Estimated: $12.50").font(.title3.bold())
-            Button("Confirm & find driver") { }
-                .buttonStyle(.borderedProminent)
-        }
-        .padding()
-        .presentationDetents([.medium])
-    }
-}
