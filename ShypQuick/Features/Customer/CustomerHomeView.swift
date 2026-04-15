@@ -12,8 +12,10 @@ struct CustomerHomeView: View {
     @State private var pickupCoord: CLLocationCoordinate2D?
     @State private var dropoffCoord: CLLocationCoordinate2D?
     @State private var itemSize: ItemSize = .small
+    @State private var selectedCategory: ItemCategory?
     @State private var sameHour = false
     @State private var routeRequest: RouteRequest?
+    @State private var showingCategorySheet = false
     @State private var activeField: Field?
 
     struct RouteRequest: Hashable {
@@ -59,12 +61,20 @@ struct CustomerHomeView: View {
                 VStack(spacing: 12) {
                     formCard
 
-                    Picker("Size", selection: $itemSize) {
-                        ForEach(ItemSize.allCases, id: \.self) { size in
-                            Text(size.rawValue.capitalized).tag(size)
+                    if let category = selectedCategory {
+                        HStack {
+                            Image(systemName: category.icon).foregroundStyle(.tint)
+                            VStack(alignment: .leading, spacing: 0) {
+                                Text(category.title).font(.subheadline.bold())
+                                Text(category.description).font(.caption).foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                            Button("Change") { showingCategorySheet = true }
+                                .font(.caption.bold())
                         }
+                        .padding(.horizontal, 12).padding(.vertical, 10)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
                     }
-                    .pickerStyle(.segmented)
 
                     Toggle(isOn: $sameHour) {
                         Label("Need it within the hour (+$30)", systemImage: "bolt.fill")
@@ -85,14 +95,7 @@ struct CustomerHomeView: View {
                     }
 
                     Button {
-                        guard let p = pickupCoord, let d = dropoffCoord else { return }
-                        routeRequest = RouteRequest(
-                            pickupAddress: pickupAddress,
-                            dropoffAddress: dropoffAddress,
-                            pickupLat: p.latitude, pickupLng: p.longitude,
-                            dropoffLat: d.latitude, dropoffLng: d.longitude,
-                            size: itemSize, sameHour: sameHour
-                        )
+                        showingCategorySheet = true
                     } label: {
                         Text("Request ShypQuick")
                             .bold()
@@ -106,6 +109,20 @@ struct CustomerHomeView: View {
             }
             .navigationTitle("Send a package")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showingCategorySheet) {
+                ItemCategorySheet { category in
+                    selectedCategory = category
+                    itemSize = category.size
+                    guard let p = pickupCoord, let d = dropoffCoord else { return }
+                    routeRequest = RouteRequest(
+                        pickupAddress: pickupAddress,
+                        dropoffAddress: dropoffAddress,
+                        pickupLat: p.latitude, pickupLng: p.longitude,
+                        dropoffLat: d.latitude, dropoffLng: d.longitude,
+                        size: category.size, sameHour: sameHour
+                    )
+                }
+            }
             .navigationDestination(item: $routeRequest) { req in
                 let pickup = CLLocationCoordinate2D(latitude: req.pickupLat, longitude: req.pickupLng)
                 let dropoff = CLLocationCoordinate2D(latitude: req.dropoffLat, longitude: req.dropoffLng)
