@@ -143,10 +143,24 @@ struct CustomerHomeView: View {
             .navigationTitle("Send a package")
             .navigationBarTitleDisplayMode(.inline)
             .sheet(isPresented: $showingCategorySheet) {
-                ItemCategorySheet { category, _ in
+                ItemCategorySheet { category, photoData in
                     selectedCategory = category
                     itemSize = category.size
+                    attachedPhotoData = photoData
                     guard let p = pickupCoord, let d = dropoffCoord else { return }
+                    let quote = PricingService.quote(size: category.size, pickup: p, dropoff: d, sameHour: sameHour)
+                    DispatchService.shared.postOffer(
+                        pickupAddress: pickupAddress,
+                        dropoffAddress: dropoffAddress,
+                        pickup: p,
+                        dropoff: d,
+                        size: category.size,
+                        sameHour: sameHour,
+                        totalCents: quote.totalCents,
+                        photoData: photoData,
+                        categoryTitle: category.title,
+                        categoryIcon: category.icon
+                    )
                     routeRequest = RouteRequest(
                         pickupAddress: pickupAddress,
                         dropoffAddress: dropoffAddress,
