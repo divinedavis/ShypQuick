@@ -27,11 +27,10 @@ struct DriverJobOfferView: View {
 
             VStack(spacing: 20) {
                 HStack {
-                    Label("NEW JOB", systemImage: "bell.badge.fill")
-                        .font(.subheadline.bold())
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(.white.opacity(0.2), in: Capsule())
+                    Image("AppLogo")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(height: 40)
                     Spacer()
                     Text("\(secondsRemaining)s")
                         .font(.title3.bold().monospacedDigit())
