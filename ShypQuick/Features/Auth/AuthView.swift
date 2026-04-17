@@ -12,79 +12,82 @@ struct AuthView: View {
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 20) {
-                Spacer()
+            ScrollView {
+                VStack(spacing: 20) {
+                    Spacer(minLength: 40)
 
-                Image(systemName: "shippingbox.and.arrow.backward.fill")
-                    .font(.system(size: 64))
-                    .foregroundStyle(.tint)
+                    Image(systemName: "shippingbox.and.arrow.backward.fill")
+                        .font(.system(size: 64))
+                        .foregroundStyle(.tint)
 
-                Text("ShypQuick")
-                    .font(.largeTitle.bold())
-                Text("On-demand delivery, on your terms.")
-                    .foregroundStyle(.secondary)
+                    Text("ShypQuick")
+                        .font(.largeTitle.bold())
+                    Text("On-demand delivery, on your terms.")
+                        .foregroundStyle(.secondary)
 
-                VStack(spacing: 12) {
-                    if isSignUp {
-                        TextField("Full name", text: $fullName)
-                            .textFieldStyle(.roundedBorder)
-                    }
-                    TextField("Email", text: $email)
-                        .textFieldStyle(.roundedBorder)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                    SecureField("Password", text: $password)
-                        .textFieldStyle(.roundedBorder)
-
-                    if isSignUp {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("I want to sign up as")
-                                .font(.footnote.bold())
-                                .foregroundStyle(.secondary)
-                            HStack(spacing: 10) {
-                                roleCard(
-                                    choice: .customer,
-                                    title: "Customer",
-                                    subtitle: "Send packages",
-                                    icon: "shippingbox.fill"
-                                )
-                                roleCard(
-                                    choice: .driver,
-                                    title: "Driver",
-                                    subtitle: "Deliver & earn",
-                                    icon: "car.fill"
-                                )
-                            }
+                    VStack(spacing: 12) {
+                        if isSignUp {
+                            TextField("Full name", text: $fullName)
+                                .textFieldStyle(.roundedBorder)
                         }
-                        .padding(.top, 4)
+                        TextField("Email", text: $email)
+                            .textFieldStyle(.roundedBorder)
+                            .keyboardType(.emailAddress)
+                            .autocapitalization(.none)
+                        SecureField("Password", text: $password)
+                            .textFieldStyle(.roundedBorder)
+
+                        if isSignUp {
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("I want to sign up as")
+                                    .font(.footnote.bold())
+                                    .foregroundStyle(.secondary)
+                                HStack(spacing: 10) {
+                                    roleCard(
+                                        choice: .customer,
+                                        title: "Customer",
+                                        subtitle: "Send packages",
+                                        icon: "shippingbox.fill"
+                                    )
+                                    roleCard(
+                                        choice: .driver,
+                                        title: "Driver",
+                                        subtitle: "Deliver & earn",
+                                        icon: "car.fill"
+                                    )
+                                }
+                            }
+                            .padding(.top, 4)
+                        }
                     }
-                }
-                .padding(.horizontal)
+                    .padding(.horizontal)
 
-                if let errorMessage {
-                    Text(errorMessage).foregroundStyle(.red).font(.caption)
-                }
-
-                Button(action: submit) {
-                    if isLoading {
-                        ProgressView()
-                    } else {
-                        Text(isSignUp ? "Create account" : "Sign in")
-                            .bold()
-                            .frame(maxWidth: .infinity)
+                    if let errorMessage {
+                        Text(errorMessage).foregroundStyle(.red).font(.caption)
                     }
-                }
-                .buttonStyle(.borderedProminent)
-                .padding(.horizontal)
 
-                Button(isSignUp ? "Have an account? Sign in" : "New here? Create account") {
-                    isSignUp.toggle()
-                }
-                .font(.footnote)
+                    Button(action: submit) {
+                        if isLoading {
+                            ProgressView()
+                        } else {
+                            Text(isSignUp ? "Create account" : "Sign in")
+                                .bold()
+                                .frame(maxWidth: .infinity)
+                        }
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .padding(.horizontal)
 
-                Spacer()
+                    Button(isSignUp ? "Have an account? Sign in" : "New here? Create account") {
+                        isSignUp.toggle()
+                    }
+                    .font(.footnote)
+
+                    Spacer(minLength: 40)
+                }
+                .padding()
             }
-            .padding()
+            .scrollDismissesKeyboard(.interactively)
         }
     }
 
