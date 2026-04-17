@@ -11,7 +11,6 @@ enum DeliveryStatus: String, Codable {
 
 enum ItemSize: String, Codable, CaseIterable {
     case small
-    case medium
     case large
 }
 
