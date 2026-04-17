@@ -6,12 +6,13 @@ struct PurchaseSource: Identifiable, Hashable {
     let icon: String
 
     static let all: [PurchaseSource] = [
-        .init(id: "amazon",     title: "Amazon",      icon: "shippingbox.fill"),
-        .init(id: "walmart",    title: "Walmart",     icon: "cart.fill"),
-        .init(id: "target",     title: "Target",      icon: "target"),
-        .init(id: "ikea",       title: "IKEA",        icon: "sofa.fill"),
-        .init(id: "local",      title: "Local store", icon: "building.2.fill"),
-        .init(id: "other",      title: "Other",       icon: "questionmark.circle.fill")
+        .init(id: "craigslist",  title: "Craigslist",         icon: "list.bullet.rectangle.fill"),
+        .init(id: "lowes",       title: "Lowes/Home Depot",   icon: "hammer.fill"),
+        .init(id: "walmart",     title: "Walmart",            icon: "cart.fill"),
+        .init(id: "target",      title: "Target",             icon: "target"),
+        .init(id: "social",      title: "Social Media",       icon: "bubble.left.and.bubble.right.fill"),
+        .init(id: "local",       title: "Local store",        icon: "building.2.fill"),
+        .init(id: "other",       title: "Other",              icon: "questionmark.circle.fill")
     ]
 }
 
