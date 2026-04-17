@@ -16,6 +16,11 @@ final class DeliverySimulation: ObservableObject {
         case delivered
         case failed(String)
 
+        var isFailed: Bool {
+            if case .failed = self { return true }
+            return false
+        }
+
         var headline: String {
             switch self {
             case .idle:                return "Ready"

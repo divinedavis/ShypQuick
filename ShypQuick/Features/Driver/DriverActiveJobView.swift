@@ -51,16 +51,29 @@ struct DriverActiveJobView: View {
                     .padding()
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
 
-                    Button {
-                        onComplete()
-                    } label: {
-                        Text("Mark delivered")
-                            .bold()
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 4)
+                    HStack(spacing: 12) {
+                        NavigationLink {
+                            ChatView(isDriver: true)
+                        } label: {
+                            Label("Message", systemImage: "message.fill")
+                                .bold()
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.blue)
+
+                        Button {
+                            onComplete()
+                        } label: {
+                            Text("Mark delivered")
+                                .bold()
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.green)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(.green)
                 }
                 .padding()
             }

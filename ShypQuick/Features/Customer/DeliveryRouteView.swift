@@ -136,20 +136,34 @@ struct DeliveryRouteView: View {
                 }
             }
 
-            Button {
-                if simulation.phase == .delivered {
-                    dismiss()
-                } else {
-                    simulation.start(pickup: pickup, dropoff: dropoff)
+            HStack(spacing: 12) {
+                if simulation.phase != .idle && simulation.phase != .searching && !simulation.phase.isFailed {
+                    NavigationLink {
+                        ChatView(isDriver: false)
+                    } label: {
+                        Label("Message", systemImage: "message.fill")
+                            .bold()
+                            .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(.blue)
                 }
-            } label: {
-                Text(findDriverButtonLabel)
-                    .bold()
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 4)
+
+                Button {
+                    if simulation.phase == .delivered {
+                        dismiss()
+                    } else {
+                        simulation.start(pickup: pickup, dropoff: dropoff)
+                    }
+                } label: {
+                    Text(findDriverButtonLabel)
+                        .bold()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 4)
+                }
+                .buttonStyle(.borderedProminent)
+                .disabled(isFindDriverDisabled)
             }
-            .buttonStyle(.borderedProminent)
-            .disabled(isFindDriverDisabled)
         }
         .padding()
         .background(.regularMaterial)
