@@ -13,6 +13,32 @@ struct DriverHomeView: View {
         )
     )
 
+    private func createFakeOrder() {
+        let driverCoord = location.currentLocation?.coordinate
+            ?? CLLocationCoordinate2D(latitude: 40.6782, longitude: -73.9442)
+        let pickupLat = driverCoord.latitude + Double.random(in: -0.02...0.02)
+        let pickupLng = driverCoord.longitude + Double.random(in: -0.02...0.02)
+        let dropoffLat = driverCoord.latitude + Double.random(in: -0.05...0.05)
+        let dropoffLng = driverCoord.longitude + Double.random(in: -0.05...0.05)
+        let pickup = CLLocationCoordinate2D(latitude: pickupLat, longitude: pickupLng)
+        let dropoff = CLLocationCoordinate2D(latitude: dropoffLat, longitude: dropoffLng)
+        let size: ItemSize = Bool.random() ? .small : .large
+        let sameHour = Bool.random()
+        let quote = PricingService.quote(size: size, pickup: pickup, dropoff: dropoff, sameHour: sameHour)
+        dispatch.postOffer(
+            pickupAddress: "123 Test Pickup St, Brooklyn, NY",
+            dropoffAddress: "456 Test Dropoff Ave, Brooklyn, NY",
+            pickup: pickup,
+            dropoff: dropoff,
+            size: size,
+            sameHour: sameHour,
+            totalCents: quote.totalCents,
+            photoData: nil,
+            categoryTitle: size == .small ? "Fits in a Car" : "Needs a Flatbed",
+            categoryIcon: size == .small ? "car.fill" : "truck.box.fill"
+        )
+    }
+
     private var visibleOffer: JobOffer? {
         guard isOnline, let offer = dispatch.pendingOffer else { return nil }
         guard let driverLoc = location.currentLocation else {
@@ -53,6 +79,19 @@ struct DriverHomeView: View {
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(isOnline ? .red : .green)
+
+                    if isOnline {
+                        Button {
+                            createFakeOrder()
+                        } label: {
+                            Label("Simulate test order", systemImage: "play.circle.fill")
+                                .bold()
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                    }
                 }
                 .padding()
             }
