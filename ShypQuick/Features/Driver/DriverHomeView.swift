@@ -95,7 +95,7 @@ struct DriverHomeView: View {
                 }
                 .padding()
             }
-            .navigationTitle("Drive")
+            .navigationTitle("Deliver")
             .navigationBarTitleDisplayMode(.inline)
             .onChange(of: location.currentLocation) { _, loc in
                 guard let coord = loc?.coordinate else { return }
