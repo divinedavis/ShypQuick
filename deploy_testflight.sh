@@ -56,19 +56,9 @@ xcodebuild -exportArchive \
   -authenticationKeyIssuerID "$API_ISSUER_ID" \
   -quiet
 
-echo "✅ IPA exported to $EXPORT_DIR"
+echo "🎉 Version $NEW_VERSION exported and uploaded to TestFlight!"
 
-# ── 4. Upload to TestFlight ────────────────────────────
-echo "🚀 Uploading to TestFlight..."
-xcrun altool --upload-app \
-  -f "$EXPORT_DIR/ShypQuick.ipa" \
-  -t ios \
-  --apiKey "$API_KEY_ID" \
-  --apiIssuer "$API_ISSUER_ID"
-
-echo "🎉 Version $NEW_VERSION uploaded to TestFlight!"
-
-# ── 5. Commit version bump ─────────────────────────────
+# ── 4. Commit version bump ─────────────────────────────
 cd "$PROJECT_DIR"
 git add "$PBXPROJ"
 git commit -m "Bump version to $NEW_VERSION for TestFlight"
