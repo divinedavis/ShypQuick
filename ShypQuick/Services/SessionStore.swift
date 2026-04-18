@@ -70,6 +70,32 @@ final class SessionStore: ObservableObject {
         state = .signedIn(profile)
     }
 
+    func signInWithApple(idToken: String, fullName: String?) async throws {
+        let session = try await client.auth.signInWithIdToken(
+            credentials: .init(provider: .apple, idToken: idToken)
+        )
+        // Try to load existing profile; if none exists, create one.
+        do {
+            let profile = try await loadProfile(userId: session.user.id)
+            state = .signedIn(profile)
+        } catch {
+            // First Apple sign-in — create a profile row.
+            let name = fullName ?? session.user.email ?? "User"
+            let role = UserRole.customer
+            struct NewProfile: Encodable {
+                let id: UUID
+                let full_name: String
+                let role: String
+            }
+            try await client
+                .from("profiles")
+                .insert(NewProfile(id: session.user.id, full_name: name, role: role.rawValue))
+                .execute()
+            let profile = try await loadProfile(userId: session.user.id)
+            state = .signedIn(profile)
+        }
+    }
+
     func signOut() async {
         try? await client.auth.signOut()
         state = .signedOut
