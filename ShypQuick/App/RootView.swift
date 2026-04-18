@@ -23,10 +23,14 @@ struct MainTabView: View {
             switch profile.role {
             case .driver:
                 DriverHomeView()
-                    .tabItem { Label("Drive", systemImage: "car.fill") }
+                    .tabItem { Label("Deliver", systemImage: "car.fill") }
+                ScheduledJobsView()
+                    .tabItem { Label("Scheduled", systemImage: "calendar.badge.clock") }
             case .customer, .both:
                 CustomerHomeView(profile: profile)
                     .tabItem { Label("Send", systemImage: "shippingbox.fill") }
+                MyScheduledView()
+                    .tabItem { Label("Scheduled", systemImage: "calendar.badge.clock") }
             }
 
             HistoryView()

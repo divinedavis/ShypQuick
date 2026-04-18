@@ -20,6 +20,8 @@ struct CustomerHomeView: View {
     @State private var sameHour = false
     @State private var routeRequest: RouteRequest?
     @State private var showingCategorySheet = false
+    @State private var showingScheduleSheet = false
+    @State private var showingSchedulePicker = false
     @State private var activeField: Field?
 
     struct RouteRequest: Hashable {
@@ -127,16 +129,29 @@ struct CustomerHomeView: View {
                         .padding(.horizontal, 12)
                     }
 
-                    Button {
-                        showingCategorySheet = true
-                    } label: {
-                        Text("Request ShypQuick")
-                            .bold()
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 4)
+                    HStack(spacing: 12) {
+                        Button {
+                            showingCategorySheet = true
+                        } label: {
+                            Text("Request now")
+                                .bold()
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(pickupCoord == nil || dropoffCoord == nil)
+
+                        Button {
+                            showingScheduleSheet = true
+                        } label: {
+                            Label("Schedule", systemImage: "calendar")
+                                .bold()
+                                .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                        .disabled(pickupCoord == nil || dropoffCoord == nil)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .disabled(pickupCoord == nil || dropoffCoord == nil)
                 }
                 .padding()
             }
@@ -168,6 +183,35 @@ struct CustomerHomeView: View {
                         dropoffLat: d.latitude, dropoffLng: d.longitude,
                         size: category.size, sameHour: sameHour
                     )
+                }
+            }
+            .sheet(isPresented: $showingScheduleSheet) {
+                ItemCategorySheet { category, photoData in
+                    selectedCategory = category
+                    itemSize = category.size
+                    attachedPhotoData = photoData
+                    showingScheduleSheet = false
+                    showingSchedulePicker = true
+                }
+            }
+            .sheet(isPresented: $showingSchedulePicker) {
+                SchedulePickerSheet { date in
+                    guard let p = pickupCoord, let d = dropoffCoord,
+                          let cat = selectedCategory else { return }
+                    let quote = PricingService.quote(size: cat.size, pickup: p, dropoff: d, sameHour: false)
+                    ScheduleService.shared.schedule(
+                        pickupAddress: pickupAddress,
+                        dropoffAddress: dropoffAddress,
+                        pickup: p,
+                        dropoff: d,
+                        size: cat.size,
+                        totalCents: quote.totalCents,
+                        photoData: attachedPhotoData,
+                        categoryTitle: cat.title,
+                        categoryIcon: cat.icon,
+                        scheduledAt: date
+                    )
+                    resetForm()
                 }
             }
             .navigationDestination(item: $routeRequest) { req in
