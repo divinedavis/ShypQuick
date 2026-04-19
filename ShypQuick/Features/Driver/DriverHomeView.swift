@@ -4,6 +4,7 @@ import CoreLocation
 
 struct DriverHomeView: View {
     @State private var isOnline = false
+    @State private var showSimulate = false
     @StateObject private var location = LocationService.shared
     @StateObject private var dispatch = DispatchService.shared
     @State private var cameraPosition: MapCameraPosition = .region(
@@ -71,8 +72,10 @@ struct DriverHomeView: View {
                             location.requestPermission()
                             location.startUpdating()
                             dispatch.startListening()
+                            showSimulate = true
                         } else {
                             dispatch.stopListening()
+                            showSimulate = false
                         }
                     } label: {
                         Text(isOnline ? "Go offline" : "Go online")
@@ -83,9 +86,10 @@ struct DriverHomeView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(isOnline ? .red : .green)
 
-                    if isOnline {
+                    if showSimulate {
                         Button {
                             createFakeOrder()
+                            showSimulate = false
                         } label: {
                             Label("Simulate test order", systemImage: "play.circle.fill")
                                 .bold()

@@ -79,11 +79,13 @@ serve(async (req) => {
             body: JSON.stringify(notification),
           }
         );
-        return { device_token, status: resp.status };
+        const respBody = await resp.text();
+        return { device_token: device_token.substring(0, 8), status: resp.status, body: respBody };
       })
     );
 
-    return new Response(JSON.stringify({ sent: results.length }), {
+    const details = results.map((r: any) => r.status === "fulfilled" ? r.value : { error: String(r.reason) });
+    return new Response(JSON.stringify({ sent: results.length, details }), {
       status: 200,
       headers: { "Content-Type": "application/json" },
     });
