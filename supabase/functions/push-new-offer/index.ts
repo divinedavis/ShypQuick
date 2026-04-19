@@ -41,10 +41,11 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get all driver push tokens
+    // Get push tokens for drivers only
     const { data: tokens, error } = await supabase
       .from("push_tokens")
-      .select("device_token, user_id");
+      .select("device_token, user_id, profiles!inner(role)")
+      .in("profiles.role", ["driver", "both"]);
 
     if (error || !tokens?.length) {
       return new Response("No tokens", { status: 200 });
@@ -57,7 +58,7 @@ serve(async (req) => {
     const notification = {
       aps: {
         alert: {
-          title: "New delivery available!",
+          title: "SHYP Quick — New delivery!",
           body: `${record.category_title} — Earn $${earningsDollars}`,
         },
         sound: "default",

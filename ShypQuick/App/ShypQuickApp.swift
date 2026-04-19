@@ -22,7 +22,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         _ application: UIApplication,
         didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data
     ) {
-        PushNotificationService.shared.saveToken(deviceToken)
+        PushNotificationService.shared.saveTokenIfDriver(deviceToken)
     }
 
     func application(

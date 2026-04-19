@@ -21,11 +21,21 @@ final class PushNotificationService: NSObject, ObservableObject {
         }
     }
 
-    func saveToken(_ deviceToken: Data) {
+    func saveTokenIfDriver(_ deviceToken: Data) {
         let token = deviceToken.map { String(format: "%02x", $0) }.joined()
         Task {
             do {
                 let userId = try await client.auth.session.user.id
+                // Only save token if user is a driver
+                struct ProfileRole: Decodable { let role: String }
+                let profile: ProfileRole = try await client
+                    .from("profiles")
+                    .select("role")
+                    .eq("id", value: userId)
+                    .single()
+                    .execute()
+                    .value
+                guard profile.role == "driver" || profile.role == "both" else { return }
                 struct TokenRow: Encodable {
                     let user_id: UUID
                     let device_token: String
