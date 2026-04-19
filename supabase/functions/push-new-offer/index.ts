@@ -14,7 +14,11 @@ const APNS_PRIVATE_KEY = Deno.env.get("APNS_PRIVATE_KEY")!;
 const BUNDLE_ID = "com.Dev.Shyp-Quick";
 
 // APNs endpoint (use api.push.apple.com for production)
-const APNS_HOST = "https://api.sandbox.push.apple.com";
+// Try production first (TestFlight/App Store), fall back to sandbox (Xcode)
+const APNS_HOSTS = [
+  "https://api.push.apple.com",
+  "https://api.sandbox.push.apple.com",
+];
 
 async function getApnsToken(): Promise<string> {
   const key = await importPKCS8(APNS_PRIVATE_KEY, "ES256");
@@ -62,25 +66,33 @@ serve(async (req) => {
       offer_id: record.id,
     };
 
-    // Send to all drivers
+    // Send to all drivers, trying production then sandbox
     const results = await Promise.allSettled(
       tokens.map(async ({ device_token }: { device_token: string }) => {
-        const resp = await fetch(
-          `${APNS_HOST}/3/device/${device_token}`,
-          {
-            method: "POST",
-            headers: {
-              authorization: `bearer ${apnsToken}`,
-              "apns-topic": BUNDLE_ID,
-              "apns-push-type": "alert",
-              "apns-priority": "10",
-              "content-type": "application/json",
-            },
-            body: JSON.stringify(notification),
+        for (const host of APNS_HOSTS) {
+          const resp = await fetch(
+            `${host}/3/device/${device_token}`,
+            {
+              method: "POST",
+              headers: {
+                authorization: `bearer ${apnsToken}`,
+                "apns-topic": BUNDLE_ID,
+                "apns-push-type": "alert",
+                "apns-priority": "10",
+                "content-type": "application/json",
+              },
+              body: JSON.stringify(notification),
+            }
+          );
+          const respBody = await resp.text();
+          if (resp.status === 200) {
+            return { device_token: device_token.substring(0, 8), status: 200, host };
           }
-        );
-        const respBody = await resp.text();
-        return { device_token: device_token.substring(0, 8), status: resp.status, body: respBody };
+          // If last host also failed, return the error
+          if (host === APNS_HOSTS[APNS_HOSTS.length - 1]) {
+            return { device_token: device_token.substring(0, 8), status: resp.status, body: respBody };
+          }
+        }
       })
     );
 
