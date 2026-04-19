@@ -4,11 +4,6 @@ import AuthenticationServices
 struct AuthView: View {
     @EnvironmentObject var session: SessionStore
     @State private var showEmailAuth = false
-    @State private var isSignUp = false
-    @State private var email = ""
-    @State private var password = ""
-    @State private var fullName = ""
-    @State private var role: UserRole = .customer
     @State private var errorMessage: String?
     @State private var isLoading = false
 
@@ -20,7 +15,6 @@ struct AuthView: View {
                 VStack(spacing: 0) {
                     Spacer(minLength: 120)
 
-                    // ── Branding ──
                     VStack(spacing: 6) {
                         Text("Send")
                             .font(.title.bold())
@@ -40,7 +34,6 @@ struct AuthView: View {
 
                     Spacer(minLength: 60)
 
-                    // ── Tagline ──
                     VStack(alignment: .leading, spacing: 8) {
                         Image(systemName: "shippingbox.and.arrow.backward.fill")
                             .font(.title)
@@ -57,7 +50,6 @@ struct AuthView: View {
 
                     Spacer(minLength: 40)
 
-                    // ── Buttons ──
                     VStack(spacing: 12) {
                         SignInWithAppleButton(.continue) { request in
                             request.requestedScopes = [.fullName, .email]
@@ -98,11 +90,10 @@ struct AuthView: View {
             .scrollDismissesKeyboard(.interactively)
         }
         .sheet(isPresented: $showEmailAuth) {
-            emailAuthSheet
+            EmailAuthSheet()
+                .environmentObject(session)
         }
     }
-
-    // MARK: - Gradient background
 
     private var gradient: some View {
         LinearGradient(
@@ -117,114 +108,6 @@ struct AuthView: View {
             endPoint: .bottom
         )
         .ignoresSafeArea()
-    }
-
-    // MARK: - Email auth sheet
-
-    private var emailAuthSheet: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 16) {
-                    VStack(spacing: 12) {
-                        if isSignUp {
-                            TextField("Full name", text: $fullName)
-                                .textFieldStyle(.roundedBorder)
-                        }
-                        TextField("Email", text: $email)
-                            .textFieldStyle(.roundedBorder)
-                            .keyboardType(.emailAddress)
-                            .autocapitalization(.none)
-                        SecureField("Password", text: $password)
-                            .textFieldStyle(.roundedBorder)
-
-                        if isSignUp {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("I want to sign up as")
-                                    .font(.footnote.bold())
-                                    .foregroundStyle(.secondary)
-                                HStack(spacing: 10) {
-                                    roleCard(choice: .customer, title: "Customer", subtitle: "Send packages", icon: "shippingbox.fill")
-                                    roleCard(choice: .driver, title: "Driver", subtitle: "Deliver & earn", icon: "car.fill")
-                                }
-                            }
-                            .padding(.top, 4)
-                        }
-                    }
-
-                    if let errorMessage {
-                        Text(errorMessage).foregroundStyle(.red).font(.caption)
-                    }
-
-                    Button(action: submitEmail) {
-                        if isLoading {
-                            ProgressView()
-                        } else {
-                            Text(isSignUp ? "Create account" : "Sign in")
-                                .bold()
-                                .frame(maxWidth: .infinity)
-                        }
-                    }
-                    .buttonStyle(.borderedProminent)
-
-                    Button(isSignUp ? "Have an account? Sign in" : "New here? Create account") {
-                        isSignUp.toggle()
-                    }
-                    .font(.footnote)
-                }
-                .padding()
-            }
-            .scrollDismissesKeyboard(.interactively)
-            .navigationTitle(isSignUp ? "Create account" : "Sign in")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { showEmailAuth = false }
-                }
-            }
-        }
-    }
-
-    // MARK: - Role card
-
-    @ViewBuilder
-    private func roleCard(choice: UserRole, title: String, subtitle: String, icon: String) -> some View {
-        let isSelected = role == choice
-        Button { role = choice } label: {
-            VStack(spacing: 6) {
-                Image(systemName: icon).font(.title2)
-                    .foregroundStyle(isSelected ? Color.white : Color.accentColor)
-                Text(title).font(.subheadline.bold())
-                    .foregroundStyle(isSelected ? Color.white : Color.primary)
-                Text(subtitle).font(.caption2)
-                    .foregroundStyle(isSelected ? Color.white.opacity(0.85) : Color.secondary)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
-            .background(RoundedRectangle(cornerRadius: 12)
-                .fill(isSelected ? Color.accentColor : Color(.secondarySystemBackground)))
-            .overlay(RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(isSelected ? Color.accentColor : Color.gray.opacity(0.3), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Actions
-
-    private func submitEmail() {
-        Task {
-            isLoading = true
-            defer { isLoading = false }
-            do {
-                if isSignUp {
-                    try await session.signUp(email: email, password: password, fullName: fullName, role: role)
-                } else {
-                    try await session.signIn(email: email, password: password)
-                }
-                showEmailAuth = false
-            } catch {
-                errorMessage = error.localizedDescription
-            }
-        }
     }
 
     private func handleAppleSignIn(_ result: Result<ASAuthorization, Error>) {
@@ -252,6 +135,196 @@ struct AuthView: View {
             if (error as NSError).code != ASAuthorizationError.canceled.rawValue {
                 errorMessage = error.localizedDescription
             }
+        }
+    }
+}
+
+// MARK: - Email Auth Sheet
+
+struct EmailAuthSheet: View {
+    @EnvironmentObject var session: SessionStore
+    @Environment(\.dismiss) private var dismiss
+    @State private var isSignUp = false
+    @State private var email = ""
+    @State private var password = ""
+    @State private var confirmPassword = ""
+    @State private var fullName = ""
+    @State private var role: UserRole = .customer
+    @State private var errorMessage: String?
+    @State private var isLoading = false
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 24) {
+                    // Header
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(isSignUp ? "Let's get started." : "Welcome back.")
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                        Text(isSignUp ? "Create your\nShypQuick account." : "Sign in to\nShypQuick.")
+                            .font(.largeTitle.bold())
+                    }
+                    .padding(.top, 8)
+
+                    Text(isSignUp
+                         ? "Send big items or deliver and earn — your choice."
+                         : "On-demand delivery for furniture, appliances, and more.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+
+                    // Fields
+                    VStack(spacing: 20) {
+                        if isSignUp {
+                            UnderlineField(placeholder: "Full name", text: $fullName)
+                        }
+                        UnderlineField(placeholder: "Email", text: $email, keyboardType: .emailAddress)
+                        UnderlineField(placeholder: "Password", text: $password, isSecure: true)
+                        if isSignUp {
+                            UnderlineField(placeholder: "Confirm password", text: $confirmPassword, isSecure: true)
+                        }
+                    }
+
+                    // Role selector (sign up only)
+                    if isSignUp {
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("I want to")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.secondary)
+                            HStack(spacing: 12) {
+                                roleCard(
+                                    choice: .customer,
+                                    title: "Send",
+                                    subtitle: "Ship packages",
+                                    icon: "shippingbox.fill",
+                                    color: .blue
+                                )
+                                roleCard(
+                                    choice: .driver,
+                                    title: "Deliver",
+                                    subtitle: "Earn money",
+                                    icon: "car.fill",
+                                    color: .green
+                                )
+                            }
+                        }
+                    }
+
+                    if let errorMessage {
+                        Text(errorMessage).foregroundStyle(.red).font(.caption)
+                    }
+
+                    // Action button
+                    Button(action: submit) {
+                        if isLoading {
+                            ProgressView().tint(.white)
+                        } else {
+                            Text(isSignUp ? "Create Account" : "Sign In")
+                                .bold()
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .background(Color(.label), in: RoundedRectangle(cornerRadius: 26))
+                    .foregroundStyle(Color(.systemBackground))
+
+                    // Toggle
+                    Button(isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up") {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            isSignUp.toggle()
+                            errorMessage = nil
+                        }
+                    }
+                    .font(.footnote)
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(24)
+            }
+            .scrollDismissesKeyboard(.interactively)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func roleCard(choice: UserRole, title: String, subtitle: String, icon: String, color: Color) -> some View {
+        let isSelected = role == choice
+        Button { withAnimation(.easeInOut(duration: 0.2)) { role = choice } } label: {
+            VStack(spacing: 10) {
+                Image(systemName: icon)
+                    .font(.system(size: 28))
+                    .frame(width: 56, height: 56)
+                    .background(isSelected ? color : Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 16))
+                    .foregroundStyle(isSelected ? .white : color)
+                VStack(spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.bold())
+                    Text(subtitle)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(isSelected ? color.opacity(0.08) : Color(.secondarySystemBackground))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .strokeBorder(isSelected ? color : Color.clear, lineWidth: 2)
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func submit() {
+        Task {
+            isLoading = true
+            defer { isLoading = false }
+            do {
+                if isSignUp {
+                    guard password == confirmPassword else {
+                        errorMessage = "Passwords don't match."
+                        return
+                    }
+                    try await session.signUp(email: email, password: password, fullName: fullName, role: role)
+                } else {
+                    try await session.signIn(email: email, password: password)
+                }
+                dismiss()
+            } catch {
+                errorMessage = error.localizedDescription
+            }
+        }
+    }
+}
+
+// MARK: - Underline text field
+
+struct UnderlineField: View {
+    let placeholder: String
+    @Binding var text: String
+    var keyboardType: UIKeyboardType = .default
+    var isSecure: Bool = false
+
+    var body: some View {
+        VStack(spacing: 6) {
+            if isSecure {
+                SecureField(placeholder, text: $text)
+                    .font(.body)
+            } else {
+                TextField(placeholder, text: $text)
+                    .font(.body)
+                    .keyboardType(keyboardType)
+                    .autocapitalization(.none)
+            }
+            Rectangle()
+                .fill(Color(.separator))
+                .frame(height: 1)
         }
     }
 }
