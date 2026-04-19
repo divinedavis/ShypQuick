@@ -78,12 +78,10 @@ struct HistoryView: View {
                                 }
                                 Spacer()
                                 if !isDriver {
-                                    Label(
-                                        job.driverId != nil ? "Accepted" : "Pending",
-                                        systemImage: job.driverId != nil ? "checkmark.circle.fill" : "clock.fill"
-                                    )
-                                    .font(.caption.bold())
-                                    .foregroundStyle(job.driverId != nil ? .green : .orange)
+                                    let statusInfo = customerStatus(job)
+                                    Label(statusInfo.label, systemImage: statusInfo.icon)
+                                        .font(.caption.bold())
+                                        .foregroundStyle(statusInfo.color)
                                 }
                             }
                         }
@@ -97,6 +95,19 @@ struct HistoryView: View {
         }
     }
 
+    private func customerStatus(_ job: CompletedJob) -> (label: String, icon: String, color: Color) {
+        switch job.status {
+        case "delivered":
+            return ("Delivered", "checkmark.seal.fill", .green)
+        case "accepted":
+            return ("In progress", "arrow.triangle.swap", .blue)
+        case "expired", "declined":
+            return ("Expired", "xmark.circle.fill", .secondary)
+        default:
+            return ("Pending", "clock.fill", .orange)
+        }
+    }
+
     private func loadHistory() async {
         do {
             let userId = try await client.auth.session.user.id
@@ -104,7 +115,7 @@ struct HistoryView: View {
                 jobs = try await client
                     .from("job_offers")
                     .select()
-                    .eq("status", value: "accepted")
+                    .in("status", values: ["accepted", "delivered"])
                     .eq("driver_id", value: userId)
                     .order("created_at", ascending: false)
                     .execute()

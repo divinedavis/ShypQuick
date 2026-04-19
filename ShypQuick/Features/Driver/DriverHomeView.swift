@@ -126,7 +126,7 @@ struct DriverHomeView: View {
             }
             .fullScreenCover(item: $dispatch.activeJob) { job in
                 DriverActiveJobView(job: job) {
-                    dispatch.clearActiveJob()
+                    dispatch.completeActiveJob()
                 }
             }
         }

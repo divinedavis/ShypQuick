@@ -295,7 +295,15 @@ final class DispatchService: ObservableObject {
         }
     }
 
-    func clearActiveJob() {
+    func completeActiveJob() {
+        guard let job = activeJob else { return }
         activeJob = nil
+        Task {
+            try? await client
+                .from("job_offers")
+                .update(JobOfferUpdate(status: "delivered", driver_id: nil))
+                .eq("id", value: job.id)
+                .execute()
+        }
     }
 }
