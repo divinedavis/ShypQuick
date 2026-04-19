@@ -128,10 +128,10 @@ curl -s -X POST "https://api.appstoreconnect.apple.com/v1/betaAppReviewSubmissio
 echo "📋 Submitted for Beta App Review"
 
 # Wait for approval then add to group
-for attempt in $(seq 1 20); do
-  sleep 15
+for attempt in $(seq 1 40); do
+  sleep 20
   # Refresh JWT if needed (every ~15 min)
-  if [ $attempt -eq 10 ]; then JWT=$(generate_jwt); fi
+  if [ $attempt -eq 15 ]; then JWT=$(generate_jwt); fi
 
   REVIEW_STATE=$(curl -s "https://api.appstoreconnect.apple.com/v1/builds/$BUILD_ID/betaAppReviewSubmission" \
     -H "Authorization: Bearer $JWT" | python3 -c "
@@ -154,4 +154,4 @@ print(d.get('data',{}).get('attributes',{}).get('betaReviewState','UNKNOWN'))
   fi
 done
 
-echo "⚠️  Beta review not approved after 5 minutes. Will auto-distribute when approved."
+echo "⚠️  Beta review not approved after 13 minutes. Will auto-distribute when approved."
