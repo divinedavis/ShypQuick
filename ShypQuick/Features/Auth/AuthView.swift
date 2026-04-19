@@ -11,77 +11,72 @@ struct AuthView: View {
         ZStack {
             gradient
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 0) {
-                    Spacer(minLength: 120)
+            VStack(spacing: 0) {
+                Spacer()
 
-                    VStack(spacing: 8) {
-                        Text("Send")
-                            .font(.system(size: 38, weight: .bold))
-                            .foregroundStyle(.secondary.opacity(0.4))
-                        Text("SHYPQuick")
-                            .font(.system(size: 42, weight: .bold))
-                        Text("Deliver")
-                            .font(.system(size: 38, weight: .bold))
-                            .foregroundStyle(.secondary.opacity(0.4))
-                    }
-
-                    Spacer(minLength: 60)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Image(systemName: "shippingbox.and.arrow.backward.fill")
-                            .font(.title)
-                            .foregroundStyle(.white)
-                        Text("Big items.\nFast delivery.")
-                            .font(.title.bold())
-                            .foregroundStyle(.white)
-                        Text("On-demand delivery for furniture, appliances, and everything in between.")
-                            .font(.subheadline)
-                            .foregroundStyle(.white.opacity(0.8))
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, 24)
-
-                    Spacer(minLength: 40)
-
-                    VStack(spacing: 12) {
-                        SignInWithAppleButton(.continue) { request in
-                            request.requestedScopes = [.fullName, .email]
-                        } onCompletion: { result in
-                            handleAppleSignIn(result)
-                        }
-                        .signInWithAppleButtonStyle(.white)
-                        .frame(height: 50)
-                        .cornerRadius(25)
-
-                        Button {
-                            showEmailAuth = true
-                        } label: {
-                            HStack {
-                                Image(systemName: "envelope.fill")
-                                Text("Continue with email")
-                            }
-                            .bold()
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 50)
-                            .background(.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 25))
-                            .foregroundStyle(.white)
-                        }
-
-                        if let errorMessage {
-                            Text(errorMessage)
-                                .font(.caption)
-                                .foregroundStyle(.red)
-                                .padding(.top, 4)
-                        }
-                    }
-                    .padding(.horizontal, 24)
-
-                    Spacer(minLength: 40)
+                VStack(spacing: 8) {
+                    Text("Send")
+                        .font(.system(size: 38, weight: .bold))
+                        .foregroundStyle(.secondary.opacity(0.4))
+                    Text("SHYPQuick")
+                        .font(.system(size: 42, weight: .bold))
+                    Text("Deliver")
+                        .font(.system(size: 38, weight: .bold))
+                        .foregroundStyle(.secondary.opacity(0.4))
                 }
-                .frame(minHeight: UIScreen.main.bounds.height)
+
+                Spacer()
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Image(systemName: "shippingbox.and.arrow.backward.fill")
+                        .font(.title)
+                        .foregroundStyle(.white)
+                    Text("Big items.\nFast delivery.")
+                        .font(.title.bold())
+                        .foregroundStyle(.white)
+                    Text("On-demand delivery for furniture, appliances, and everything in between.")
+                        .font(.subheadline)
+                        .foregroundStyle(.white.opacity(0.8))
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 24)
+
+                Spacer()
+
+                VStack(spacing: 12) {
+                    SignInWithAppleButton(.continue) { request in
+                        request.requestedScopes = [.fullName, .email]
+                    } onCompletion: { result in
+                        handleAppleSignIn(result)
+                    }
+                    .signInWithAppleButtonStyle(.white)
+                    .frame(height: 50)
+                    .cornerRadius(25)
+
+                    Button {
+                        showEmailAuth = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "envelope.fill")
+                            Text("Continue with email")
+                        }
+                        .bold()
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 50)
+                        .background(.white.opacity(0.2), in: RoundedRectangle(cornerRadius: 25))
+                        .foregroundStyle(.white)
+                    }
+
+                    if let errorMessage {
+                        Text(errorMessage)
+                            .font(.caption)
+                            .foregroundStyle(.red)
+                            .padding(.top, 4)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 40)
             }
-            .scrollDismissesKeyboard(.interactively)
         }
         .sheet(isPresented: $showEmailAuth) {
             EmailAuthSheet()
