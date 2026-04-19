@@ -205,17 +205,20 @@ struct EmailAuthSheet: View {
 
                     // Action button
                     Button(action: submit) {
-                        if isLoading {
-                            ProgressView().tint(.white)
-                        } else {
-                            Text(isSignUp ? "Create Account" : "Sign In")
-                                .bold()
+                        Group {
+                            if isLoading {
+                                ProgressView().tint(.white)
+                            } else {
+                                Text(isSignUp ? "Create Account" : "Sign In")
+                                    .bold()
+                            }
                         }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .background(Color(.label), in: RoundedRectangle(cornerRadius: 26))
+                        .foregroundStyle(Color(.systemBackground))
                     }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 52)
-                    .background(Color(.label), in: RoundedRectangle(cornerRadius: 26))
-                    .foregroundStyle(Color(.systemBackground))
+                    .buttonStyle(.plain)
 
                     // Toggle
                     Button(isSignUp ? "Already have an account? Sign in" : "Don't have an account? Sign up") {
