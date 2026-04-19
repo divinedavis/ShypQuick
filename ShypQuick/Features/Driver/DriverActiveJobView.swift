@@ -6,6 +6,7 @@ struct DriverActiveJobView: View {
     let onComplete: () -> Void
 
     @State private var cameraPosition: MapCameraPosition
+    @State private var pickedUp = false
 
     init(job: JobOffer, onComplete: @escaping () -> Void) {
         self.job = job
@@ -45,6 +46,13 @@ struct DriverActiveJobView: View {
                                 .font(.subheadline.bold())
                                 .foregroundStyle(.green)
                         }
+
+                        if pickedUp {
+                            Label("Picked up — heading to dropoff", systemImage: "checkmark.circle.fill")
+                                .font(.subheadline.bold())
+                                .foregroundStyle(.green)
+                        }
+
                         Label(job.pickupAddress, systemImage: "circle.fill").font(.subheadline)
                         Label(job.dropoffAddress, systemImage: "mappin.circle.fill").font(.subheadline)
                     }
@@ -57,27 +65,39 @@ struct DriverActiveJobView: View {
                         } label: {
                             Label("Message", systemImage: "message.fill")
                                 .bold()
-                                .frame(maxWidth: .infinity)
                                 .padding(.vertical, 4)
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.blue)
 
-                        Button {
-                            onComplete()
-                        } label: {
-                            Text("Mark delivered")
-                                .bold()
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 4)
+                        if !pickedUp {
+                            Button {
+                                withAnimation { pickedUp = true }
+                            } label: {
+                                Text("Mark picked up")
+                                    .bold()
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 4)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.orange)
+                        } else {
+                            Button {
+                                onComplete()
+                            } label: {
+                                Text("Mark delivered")
+                                    .bold()
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 4)
+                            }
+                            .buttonStyle(.borderedProminent)
+                            .tint(.green)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .tint(.green)
                     }
                 }
                 .padding()
             }
-            .navigationTitle("Active job")
+            .navigationTitle(pickedUp ? "En route to dropoff" : "Head to pickup")
             .navigationBarTitleDisplayMode(.inline)
         }
     }

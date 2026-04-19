@@ -70,6 +70,9 @@ struct DriverHomeView: View {
                         if isOnline {
                             location.requestPermission()
                             location.startUpdating()
+                            dispatch.startListening()
+                        } else {
+                            dispatch.stopListening()
                         }
                     } label: {
                         Text(isOnline ? "Go offline" : "Go online")
