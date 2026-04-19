@@ -15,20 +15,14 @@ struct AuthView: View {
                 VStack(spacing: 0) {
                     Spacer(minLength: 120)
 
-                    VStack(spacing: 6) {
+                    VStack(spacing: 8) {
                         Text("Send")
-                            .font(.title.bold())
+                            .font(.system(size: 38, weight: .bold))
                             .foregroundStyle(.secondary.opacity(0.4))
-                        HStack(spacing: 8) {
-                            Image("AppLogo")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(height: 36)
-                            Text("ShypQuick")
-                                .font(.largeTitle.bold())
-                        }
+                        Text("SHYPQuick")
+                            .font(.system(size: 42, weight: .bold))
                         Text("Deliver")
-                            .font(.title.bold())
+                            .font(.system(size: 38, weight: .bold))
                             .foregroundStyle(.secondary.opacity(0.4))
                     }
 
