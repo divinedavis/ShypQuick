@@ -147,20 +147,9 @@ struct EmailAuthSheet: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     // Header
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(isSignUp ? "Let's get started." : "Welcome back.")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        Text(isSignUp ? "Create your\nShypQuick account." : "Sign in to\nShypQuick.")
-                            .font(.largeTitle.bold())
-                    }
-                    .padding(.top, 8)
-
-                    Text(isSignUp
-                         ? "Send big items or deliver and earn — your choice."
-                         : "On-demand delivery for furniture, appliances, and more.")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
+                    Text(isSignUp ? "Create your\nSHYPQuick account." : "Sign in to\nSHYPQuick.")
+                        .font(.largeTitle.bold())
+                        .padding(.top, 8)
 
                     // Fields
                     VStack(spacing: 20) {
