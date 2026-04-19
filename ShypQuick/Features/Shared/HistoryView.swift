@@ -3,31 +3,37 @@ import Supabase
 
 struct CompletedJob: Codable, Identifiable {
     let id: UUID
+    let customerId: UUID
     let pickupAddress: String
     let dropoffAddress: String
     let totalCents: Int
     let categoryTitle: String
     let categoryIcon: String
     let status: String
+    let driverId: UUID?
     let createdAt: Date?
 
     enum CodingKeys: String, CodingKey {
         case id
+        case customerId = "customer_id"
         case pickupAddress = "pickup_address"
         case dropoffAddress = "dropoff_address"
         case totalCents = "total_cents"
         case categoryTitle = "category_title"
         case categoryIcon = "category_icon"
         case status
+        case driverId = "driver_id"
         case createdAt = "created_at"
     }
 }
 
 struct HistoryView: View {
+    let profile: Profile
     @State private var jobs: [CompletedJob] = []
     @State private var isLoading = true
 
     private var client: SupabaseClient { SupabaseService.shared.client }
+    private var isDriver: Bool { profile.role == .driver }
 
     var body: some View {
         NavigationStack {
@@ -38,7 +44,9 @@ struct HistoryView: View {
                     ContentUnavailableView(
                         "No deliveries yet",
                         systemImage: "clock.arrow.circlepath",
-                        description: Text("Your completed deliveries will appear here.")
+                        description: Text(isDriver
+                            ? "Jobs you complete will appear here."
+                            : "Deliveries you request will appear here.")
                     )
                 } else {
                     List(jobs) { job in
@@ -47,19 +55,36 @@ struct HistoryView: View {
                                 Image(systemName: job.categoryIcon).foregroundStyle(.tint)
                                 Text(job.categoryTitle).font(.headline)
                                 Spacer()
-                                let earnings = Int(Double(job.totalCents) * 0.70)
-                                Text(PricingService.Quote.format(earnings))
-                                    .font(.subheadline.bold())
-                                    .foregroundStyle(.green)
+                                if isDriver {
+                                    let earnings = Int(Double(job.totalCents) * 0.70)
+                                    Text(PricingService.Quote.format(earnings))
+                                        .font(.subheadline.bold())
+                                        .foregroundStyle(.green)
+                                } else {
+                                    Text(PricingService.Quote.format(job.totalCents))
+                                        .font(.subheadline.bold())
+                                }
                             }
                             Label(job.pickupAddress, systemImage: "circle.fill")
                                 .font(.subheadline)
                             Label(job.dropoffAddress, systemImage: "mappin.circle.fill")
                                 .font(.subheadline)
-                            if let date = job.createdAt {
-                                Text(date.formatted(date: .abbreviated, time: .shortened))
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
+
+                            HStack {
+                                if let date = job.createdAt {
+                                    Text(date.formatted(date: .abbreviated, time: .shortened))
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                                Spacer()
+                                if !isDriver {
+                                    Label(
+                                        job.driverId != nil ? "Accepted" : "Pending",
+                                        systemImage: job.driverId != nil ? "checkmark.circle.fill" : "clock.fill"
+                                    )
+                                    .font(.caption.bold())
+                                    .foregroundStyle(job.driverId != nil ? .green : .orange)
+                                }
                             }
                         }
                         .padding(.vertical, 4)
@@ -75,14 +100,24 @@ struct HistoryView: View {
     private func loadHistory() async {
         do {
             let userId = try await client.auth.session.user.id
-            jobs = try await client
-                .from("job_offers")
-                .select()
-                .eq("status", value: "accepted")
-                .eq("driver_id", value: userId)
-                .order("created_at", ascending: false)
-                .execute()
-                .value
+            if isDriver {
+                jobs = try await client
+                    .from("job_offers")
+                    .select()
+                    .eq("status", value: "accepted")
+                    .eq("driver_id", value: userId)
+                    .order("created_at", ascending: false)
+                    .execute()
+                    .value
+            } else {
+                jobs = try await client
+                    .from("job_offers")
+                    .select()
+                    .eq("customer_id", value: userId)
+                    .order("created_at", ascending: false)
+                    .execute()
+                    .value
+            }
             isLoading = false
         } catch {
             isLoading = false

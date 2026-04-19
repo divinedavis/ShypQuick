@@ -33,7 +33,7 @@ struct MainTabView: View {
                     .tabItem { Label("Scheduled", systemImage: "calendar.badge.clock") }
             }
 
-            HistoryView()
+            HistoryView(profile: profile)
                 .tabItem { Label("History", systemImage: "clock.fill") }
 
             ProfileView(profile: profile)
