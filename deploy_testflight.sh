@@ -15,20 +15,18 @@ ARCHIVE_DIR="$PROJECT_DIR/build/archives"
 EXPORT_DIR="$PROJECT_DIR/build/export"
 EXPORT_OPTIONS="$PROJECT_DIR/ExportOptions.plist"
 
-# ── 1. Increment version by 0.1 ────────────────────────
-CURRENT_VERSION=$(grep -m1 'MARKETING_VERSION' "$PBXPROJ" | sed 's/.*= //;s/;//')
-MAJOR=$(echo "$CURRENT_VERSION" | cut -d. -f1)
-MINOR=$(echo "$CURRENT_VERSION" | cut -d. -f2)
-NEW_MINOR=$((MINOR + 1))
-NEW_VERSION="$MAJOR.$NEW_MINOR"
+# ── 1. Increment build number ─────────────────────────
+CURRENT_BUILD=$(grep -m1 'CURRENT_PROJECT_VERSION' "$PBXPROJ" | sed 's/.*= //;s/;//')
+NEW_BUILD=$((CURRENT_BUILD + 1))
+MARKETING_VERSION=$(grep -m1 'MARKETING_VERSION' "$PBXPROJ" | sed 's/.*= //;s/;//')
 
-echo "📦 Bumping version: $CURRENT_VERSION → $NEW_VERSION"
-sed -i '' "s/MARKETING_VERSION = $CURRENT_VERSION;/MARKETING_VERSION = $NEW_VERSION;/g" "$PBXPROJ"
+echo "📦 Bumping build: $MARKETING_VERSION ($CURRENT_BUILD) → $MARKETING_VERSION ($NEW_BUILD)"
+sed -i '' "s/CURRENT_PROJECT_VERSION = $CURRENT_BUILD;/CURRENT_PROJECT_VERSION = $NEW_BUILD;/g" "$PBXPROJ"
 
-# ── 2. Clean & Archive ─────────────────────────────────
+# ── 2. Archive ────────────────────────────────────────
 echo "🔨 Archiving..."
 mkdir -p "$ARCHIVE_DIR" "$EXPORT_DIR"
-ARCHIVE_PATH="$ARCHIVE_DIR/ShypQuick-$NEW_VERSION.xcarchive"
+ARCHIVE_PATH="$ARCHIVE_DIR/ShypQuick-$MARKETING_VERSION-$NEW_BUILD.xcarchive"
 
 cd "$PROJECT_DIR"
 xcodebuild archive \
@@ -44,8 +42,8 @@ xcodebuild archive \
 
 echo "✅ Archive created: $ARCHIVE_PATH"
 
-# ── 3. Export IPA ──────────────────────────────────────
-echo "📤 Exporting IPA..."
+# ── 3. Export & Upload ────────────────────────────────
+echo "📤 Exporting & uploading..."
 xcodebuild -exportArchive \
   -archivePath "$ARCHIVE_PATH" \
   -exportOptionsPlist "$EXPORT_OPTIONS" \
@@ -56,12 +54,12 @@ xcodebuild -exportArchive \
   -authenticationKeyIssuerID "$API_ISSUER_ID" \
   -quiet
 
-echo "🎉 Version $NEW_VERSION exported and uploaded to TestFlight!"
+echo "🎉 $MARKETING_VERSION ($NEW_BUILD) uploaded to TestFlight!"
 
-# ── 4. Commit version bump ─────────────────────────────
+# ── 4. Commit build bump ─────────────────────────────
 cd "$PROJECT_DIR"
 git add "$PBXPROJ"
-git commit -m "Bump version to $NEW_VERSION for TestFlight"
+git commit -m "Build $NEW_BUILD for TestFlight [$MARKETING_VERSION]"
 git push origin main
 
-echo "✅ Version bump committed and pushed."
+echo "✅ Build bump committed and pushed."
