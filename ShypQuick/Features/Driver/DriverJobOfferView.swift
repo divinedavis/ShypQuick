@@ -94,6 +94,23 @@ struct DriverJobOfferView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 180)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
+            } else if let urlString = offer.photoUrl, let url = URL(string: urlString) {
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .scaledToFill()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 180)
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
+                    default:
+                        ProgressView()
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 180)
+                            .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 16))
+                    }
+                }
             } else {
                 Image(systemName: offer.categoryIcon)
                     .font(.system(size: 70))

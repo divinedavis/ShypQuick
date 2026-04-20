@@ -22,6 +22,7 @@ struct JobOfferRow: Codable, Identifiable, Equatable {
     let categoryIcon: String
     let status: String
     let driverId: UUID?
+    let photoUrl: String?
     let createdAt: Date?
 
     enum CodingKeys: String, CodingKey {
@@ -40,6 +41,7 @@ struct JobOfferRow: Codable, Identifiable, Equatable {
         case categoryIcon = "category_icon"
         case status
         case driverId = "driver_id"
+        case photoUrl = "photo_url"
         case createdAt = "created_at"
     }
 }
@@ -59,6 +61,7 @@ private struct JobOfferInsert: Encodable {
     let total_cents: Int
     let category_title: String
     let category_icon: String
+    let photo_url: String?
 }
 
 private struct JobOfferUpdate: Encodable {
@@ -80,6 +83,7 @@ struct JobOffer: Identifiable, Equatable {
     let sameHour: Bool
     let totalCents: Int
     let photoData: Data?
+    let photoUrl: String?
     let categoryTitle: String
     let categoryIcon: String
     let createdAt: Date
@@ -103,6 +107,7 @@ struct JobOffer: Identifiable, Equatable {
         self.sameHour = row.sameHour
         self.totalCents = row.totalCents
         self.photoData = nil
+        self.photoUrl = row.photoUrl
         self.categoryTitle = row.categoryTitle
         self.categoryIcon = row.categoryIcon
         self.createdAt = row.createdAt ?? Date()
@@ -113,7 +118,8 @@ struct JobOffer: Identifiable, Equatable {
         pickupLat: Double, pickupLng: Double,
         dropoffLat: Double, dropoffLng: Double,
         size: ItemSize, sameHour: Bool, totalCents: Int,
-        photoData: Data?, categoryTitle: String, categoryIcon: String,
+        photoData: Data?, photoUrl: String? = nil,
+        categoryTitle: String, categoryIcon: String,
         createdAt: Date
     ) {
         self.id = id
@@ -127,6 +133,7 @@ struct JobOffer: Identifiable, Equatable {
         self.sameHour = sameHour
         self.totalCents = totalCents
         self.photoData = photoData
+        self.photoUrl = photoUrl
         self.categoryTitle = categoryTitle
         self.categoryIcon = categoryIcon
         self.createdAt = createdAt
@@ -166,6 +173,17 @@ final class DispatchService: ObservableObject {
         Task {
             do {
                 let userId = try await client.auth.session.user.id
+
+                // Upload photo if provided
+                var uploadedUrl: String?
+                if let photoData {
+                    let fileName = "\(UUID().uuidString).jpg"
+                    try await client.storage
+                        .from("item-photos")
+                        .upload(fileName, data: photoData, options: .init(contentType: "image/jpeg"))
+                    uploadedUrl = try client.storage.from("item-photos").getPublicURL(path: fileName).absoluteString
+                }
+
                 let insert = JobOfferInsert(
                     customer_id: userId,
                     pickup_address: pickupAddress,
@@ -178,7 +196,8 @@ final class DispatchService: ObservableObject {
                     same_hour: sameHour,
                     total_cents: totalCents,
                     category_title: categoryTitle,
-                    category_icon: categoryIcon
+                    category_icon: categoryIcon,
+                    photo_url: uploadedUrl
                 )
                 try await client
                     .from("job_offers")
