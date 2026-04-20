@@ -40,14 +40,7 @@ struct DriverHomeView: View {
         )
     }
 
-    private var visibleOffer: JobOffer? {
-        guard isOnline, let offer = dispatch.pendingOffer else { return nil }
-        guard let driverLoc = location.currentLocation else {
-            return offer
-        }
-        let pickup = CLLocation(latitude: offer.pickupLat, longitude: offer.pickupLng)
-        return driverLoc.distance(from: pickup) <= DispatchService.matchRadiusMeters ? offer : nil
-    }
+    @State private var showOffer: JobOffer?
 
     var body: some View {
         NavigationStack {
@@ -121,18 +114,27 @@ struct DriverHomeView: View {
                     location.requestPermission()
                     location.startUpdating()
                     dispatch.setDriverOnline(true)
+                    dispatch.startListening()
                     dispatch.notificationTapped = false
                 }
             }
-            .fullScreenCover(item: Binding(
-                get: { visibleOffer },
-                set: { _ in }
-            )) { offer in
+            .onChange(of: dispatch.pendingOffer) { _, offer in
+                if isOnline, let offer {
+                    showOffer = offer
+                }
+            }
+            .fullScreenCover(item: $showOffer) { offer in
                 DriverJobOfferView(
                     offer: offer,
                     driverLocation: location.currentLocation,
-                    onAccept: { dispatch.accept(offer) },
-                    onDecline: { dispatch.decline(offer) }
+                    onAccept: {
+                        dispatch.accept(offer)
+                        showOffer = nil
+                    },
+                    onDecline: {
+                        dispatch.decline(offer)
+                        showOffer = nil
+                    }
                 )
             }
             .fullScreenCover(item: $dispatch.activeJob) { job in
