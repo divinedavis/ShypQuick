@@ -42,6 +42,7 @@
 		163E46A82F8EBEE000040733 /* ShypQuick.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShypQuick.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		24BEC5E4973974A29FB54FAD /* ShypQuickLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = ShypQuickLiveActivity.appex; path = ShypQuickLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		296150AB0C4BF2C7ADEE5814 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		614F975CEF976BDBBCC22D60 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10C8FBA5EADAD336C6E9754 /* ShypQuickLiveActivityBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShypQuickLiveActivityBundle.swift; sourceTree = "<group>"; };
 		B8E8989E21F87DBF2B8198EF /* ShypQuickLiveActivityWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShypQuickLiveActivityWidget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -81,6 +82,7 @@
 			children = (
 				A10C8FBA5EADAD336C6E9754 /* ShypQuickLiveActivityBundle.swift */,
 				B8E8989E21F87DBF2B8198EF /* ShypQuickLiveActivityWidget.swift */,
+				614F975CEF976BDBBCC22D60 /* Info.plist */,
 			);
 			name = ShypQuickLiveActivity;
 			path = ShypQuickLiveActivity;
@@ -378,7 +380,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ShypQuick/ShypQuick.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEVELOPMENT_TEAM = CG89RY4W6R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -415,7 +417,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ShypQuick/ShypQuick.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 20;
+				CURRENT_PROJECT_VERSION = 21;
 				DEVELOPMENT_TEAM = CG89RY4W6R;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -453,8 +455,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CG89RY4W6R;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShypQuickLiveActivity/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "ShypQuick Live";
-				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -481,8 +483,8 @@
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = CG89RY4W6R;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = ShypQuickLiveActivity/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "ShypQuick Live";
-				INFOPLIST_KEY_NSExtension_NSExtensionPointIdentifier = "com.apple.widgetkit-extension";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
 				LD_RUNPATH_SEARCH_PATHS = (
