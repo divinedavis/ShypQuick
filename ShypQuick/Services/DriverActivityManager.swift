@@ -14,11 +14,19 @@ final class DriverActivityManager {
     private var currentActivity: Activity<DriverActivityAttributes>?
     private var timerTask: Task<Void, Never>?
 
-    private init() {}
+    private init() {
+        // Clean up any lingering activity from a previous app launch where
+        // the driver went offline while the app was backgrounded/killed.
+        // Without this, the Dynamic Island keeps showing "Online" from the
+        // old process even though we have no reference to it anymore.
+        Task { await cleanupOrphanedActivities() }
+    }
 
     func startOnlineActivity() {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        // If already running, don't stack a second timer.
+        // If we lost our reference but a system activity is still showing,
+        // kill it before starting a fresh one.
+        Task { await cleanupOrphanedActivities() }
         guard currentActivity == nil else { return }
 
         let attributes = DriverActivityAttributes()
@@ -45,14 +53,20 @@ final class DriverActivityManager {
         let activity = currentActivity
         currentActivity = nil
         Task {
-            let state = DriverActivityAttributes.ContentState(
-                status: "Offline",
-                minutesOnline: 0
-            )
-            await activity?.end(
-                .init(state: state, staleDate: nil),
-                dismissalPolicy: .immediate
-            )
+            // End our tracked activity first.
+            await activity?.end(nil, dismissalPolicy: .immediate)
+            // Defensive: also end any other DriverActivity still in the
+            // system UI that we may have lost track of.
+            await cleanupOrphanedActivities()
+        }
+    }
+
+    /// End every existing DriverActivityAttributes activity. Used on startup
+    /// and on stop to guarantee no stale "Online" banner survives.
+    private func cleanupOrphanedActivities() async {
+        for activity in Activity<DriverActivityAttributes>.activities {
+            if activity.id == currentActivity?.id { continue }
+            await activity.end(nil, dismissalPolicy: .immediate)
         }
     }
 

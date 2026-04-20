@@ -25,6 +25,17 @@ struct DriverActiveJobView: View {
         Int(Double(job.totalCents) * 0.70)
     }
 
+    /// Open Apple Maps with driving directions to the given coordinate.
+    /// Source is omitted so Maps uses the device's current location.
+    private func openInMaps(coord: CLLocationCoordinate2D, name: String) {
+        let location = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
+        let item = MKMapItem(location: location, address: nil)
+        item.name = name
+        item.openInMaps(launchOptions: [
+            MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDriving
+        ])
+    }
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .bottom) {
@@ -58,6 +69,24 @@ struct DriverActiveJobView: View {
                     }
                     .padding()
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+
+                    Button {
+                        if pickedUp {
+                            openInMaps(coord: job.dropoffCoord, name: "Dropoff — \(job.dropoffAddress)")
+                        } else {
+                            openInMaps(coord: job.pickupCoord, name: "Pickup — \(job.pickupAddress)")
+                        }
+                    } label: {
+                        Label(
+                            pickedUp ? "Navigate to dropoff" : "Navigate to pickup",
+                            systemImage: "arrow.triangle.turn.up.right.diamond.fill"
+                        )
+                        .bold()
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 6)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(pickedUp ? .red : .green)
 
                     HStack(spacing: 12) {
                         NavigationLink {

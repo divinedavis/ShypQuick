@@ -18,8 +18,20 @@ struct ScheduledDelivery: Identifiable, Equatable {
     let scheduledAt: Date
     let createdAt: Date
     var acceptedByDriver: String?
+    var pickedUpAt: Date?
+    var deliveredAt: Date?
 
     var isAccepted: Bool { acceptedByDriver != nil }
+    var isPickedUp: Bool { pickedUpAt != nil }
+    var isDelivered: Bool { deliveredAt != nil }
+
+    /// Short status label for UI badges.
+    var statusLabel: String {
+        if isDelivered { return "Delivered" }
+        if isPickedUp { return "Picked up" }
+        if isAccepted { return "Accepted" }
+        return "Waiting"
+    }
 
     var pickupCoord: CLLocationCoordinate2D {
         CLLocationCoordinate2D(latitude: pickupLat, longitude: pickupLng)
@@ -64,7 +76,9 @@ final class ScheduleService: ObservableObject {
             categoryIcon: categoryIcon,
             scheduledAt: scheduledAt,
             createdAt: Date(),
-            acceptedByDriver: nil
+            acceptedByDriver: nil,
+            pickedUpAt: nil,
+            deliveredAt: nil
         )
         deliveries.append(delivery)
     }
@@ -72,6 +86,22 @@ final class ScheduleService: ObservableObject {
     func accept(_ id: UUID, driverName: String) {
         guard let idx = deliveries.firstIndex(where: { $0.id == id }) else { return }
         deliveries[idx].acceptedByDriver = driverName
+    }
+
+    func markPickedUp(_ id: UUID) {
+        guard let idx = deliveries.firstIndex(where: { $0.id == id }) else { return }
+        guard deliveries[idx].isAccepted else { return }
+        if deliveries[idx].pickedUpAt == nil {
+            deliveries[idx].pickedUpAt = Date()
+        }
+    }
+
+    func markDelivered(_ id: UUID) {
+        guard let idx = deliveries.firstIndex(where: { $0.id == id }) else { return }
+        guard deliveries[idx].isPickedUp else { return }
+        if deliveries[idx].deliveredAt == nil {
+            deliveries[idx].deliveredAt = Date()
+        }
     }
 
     func remove(_ id: UUID) {

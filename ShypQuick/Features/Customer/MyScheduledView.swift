@@ -46,7 +46,15 @@ struct MyScheduledView: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
-                if delivery.isAccepted {
+                if delivery.isDelivered {
+                    Label("Delivered", systemImage: "checkmark.seal.fill")
+                        .font(.caption.bold())
+                        .foregroundStyle(.green)
+                } else if delivery.isPickedUp {
+                    Label("Picked up — en route", systemImage: "shippingbox.fill")
+                        .font(.caption.bold())
+                        .foregroundStyle(.blue)
+                } else if delivery.isAccepted {
                     Label("Accepted by \(delivery.acceptedByDriver ?? "driver")", systemImage: "checkmark.circle.fill")
                         .font(.caption.bold())
                         .foregroundStyle(.green)
