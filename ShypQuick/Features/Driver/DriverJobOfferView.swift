@@ -76,9 +76,10 @@ struct DriverJobOfferView: View {
             .padding()
         }
         .onReceive(timer) { _ in
-            if secondsRemaining > 0 {
+            if secondsRemaining > 1 {
                 secondsRemaining -= 1
-            } else {
+            } else if secondsRemaining == 1 {
+                secondsRemaining = 0
                 onDecline()
             }
         }

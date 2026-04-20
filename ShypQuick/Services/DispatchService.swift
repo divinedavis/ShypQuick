@@ -202,8 +202,17 @@ final class DispatchService: ObservableObject {
 
     // MARK: - Driver: subscribe to new offers
 
+    private var listenTask: Task<Void, Never>?
+
     func startListening() {
-        Task {
+        // Prevent duplicate listeners
+        guard realtimeChannel == nil else {
+            // Already listening — just re-fetch
+            Task { await fetchPendingOffers() }
+            return
+        }
+
+        listenTask = Task {
             // Fetch any existing pending offers
             await fetchPendingOffers()
 
@@ -215,6 +224,7 @@ final class DispatchService: ObservableObject {
             self.realtimeChannel = channel
 
             for await insertion in insertions {
+                guard !Task.isCancelled else { break }
                 do {
                     let row = try insertion.decodeRecord(as: JobOfferRow.self, decoder: JSONDecoder())
                     if row.status == "pending" {
@@ -228,6 +238,8 @@ final class DispatchService: ObservableObject {
     }
 
     func stopListening() {
+        listenTask?.cancel()
+        listenTask = nil
         Task {
             if let channel = realtimeChannel {
                 await client.realtimeV2.removeChannel(channel)
