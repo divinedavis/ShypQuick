@@ -32,13 +32,14 @@ print(jwt.encode(payload, key, algorithm='ES256', headers=headers))
 "
 }
 
-# ── 0. Pre-flight: require clean working tree ─────────
-# Otherwise the build-bump commit would drag in whatever random edits the
-# user had in flight, potentially leaking secrets or half-finished code.
+# ── 0. Pre-flight: no uncommitted *tracked* changes ───
+# The build-bump commit uses explicit `git add $PBXPROJ` so untracked
+# files (stale dirs, Supabase CLI temps) can't sneak in. But staged or
+# modified tracked files could, so block on those.
 cd "$PROJECT_DIR"
-DIRTY=$(git status --porcelain)
+DIRTY=$(git status --porcelain | grep -v '^??' || true)
 if [ -n "$DIRTY" ]; then
-  echo "❌ Working tree is dirty. Commit or stash first:"
+  echo "❌ Tracked files have uncommitted changes. Commit or stash first:"
   echo "$DIRTY"
   exit 1
 fi
