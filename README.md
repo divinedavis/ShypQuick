@@ -17,7 +17,22 @@
 
   <br />
 
-  <img src="assets/screenshots/01-auth.png" width="280" alt="ShypQuick welcome screen" />
+  <table>
+  <tr>
+  <td align="center" width="33%">
+    <img src="assets/screenshots/01-auth.png" width="240" alt="Welcome" />
+    <br/><sub><b>Welcome</b><br/>Sign in with Apple or email.</sub>
+  </td>
+  <td align="center" width="33%">
+    <img src="assets/screenshots/02-customer.png" width="240" alt="Customer home" />
+    <br/><sub><b>Customer — Send a package</b><br/>Live map, address fields, same-hour rush toggle.</sub>
+  </td>
+  <td align="center" width="33%">
+    <img src="assets/screenshots/03-driver.png" width="240" alt="Driver home" />
+    <br/><sub><b>Driver — Go online</b><br/>One tap to start receiving jobs nearby.</sub>
+  </td>
+  </tr>
+  </table>
 </div>
 
 ---
@@ -87,25 +102,6 @@ navigation, live tracking, photo of the item, payout — happens in one place.
 | **Auth** | Email / password, Sign in with Apple |
 | **Ship pipeline** | `deploy_testflight.sh` — archive → upload → auto-submit for beta review → attach to tester group, via the App Store Connect API |
 | **Payments** *(planned)* | Stripe |
-
-## Screenshots
-
-<table>
-<tr>
-<td align="center" width="33%">
-  <img src="assets/screenshots/01-auth.png" width="240" alt="Welcome" />
-  <br/><sub><b>Welcome</b><br/>Sign in with Apple or email.</sub>
-</td>
-<td align="center" width="33%">
-  <img src="assets/screenshots/02-customer.png" width="240" alt="Customer home" />
-  <br/><sub><b>Customer — Send a package</b><br/>Live map, address fields, same-hour rush toggle.</sub>
-</td>
-<td align="center" width="33%">
-  <img src="assets/screenshots/03-driver.png" width="240" alt="Driver home" />
-  <br/><sub><b>Driver — Go online</b><br/>One tap to start receiving jobs nearby.</sub>
-</td>
-</tr>
-</table>
 
 ## Architecture at a glance
 
