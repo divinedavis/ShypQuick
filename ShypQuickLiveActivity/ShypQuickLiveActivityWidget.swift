@@ -2,6 +2,13 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
+struct DriverActivityAttributes: ActivityAttributes {
+    public struct ContentState: Codable, Hashable {
+        var status: String
+        var minutesOnline: Int
+    }
+}
+
 struct ShypQuickLiveActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: DriverActivityAttributes.self) { context in

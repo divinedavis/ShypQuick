@@ -7,16 +7,50 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		20ABA1231769159459240B34 /* ShypQuickLiveActivity.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 24BEC5E4973974A29FB54FAD /* ShypQuickLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		4EB7915EA17619DDD9D9CF40 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 296150AB0C4BF2C7ADEE5814 /* Foundation.framework */; };
+		9ECC24D2C657626E2E9F7AB1 /* ShypQuickLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8E8989E21F87DBF2B8198EF /* ShypQuickLiveActivityWidget.swift */; };
 		AAAA000000000000000000A3 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA000000000000000000A2 /* Supabase */; };
+		ABE36AE46DCACFC7B4847E1E /* ShypQuickLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10C8FBA5EADAD336C6E9754 /* ShypQuickLiveActivityBundle.swift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		A57C1DC3B1E6539B0B518B06 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 163E46A02F8EBEE000040733 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A3C28009DB9700EFFEA402CB;
+			remoteInfo = ShypQuickLiveActivity;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		EEB98739B81202EB9F0C0D43 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				20ABA1231769159459240B34 /* ShypQuickLiveActivity.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		163E46A82F8EBEE000040733 /* ShypQuick.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShypQuick.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		24BEC5E4973974A29FB54FAD /* ShypQuickLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = ShypQuickLiveActivity.appex; path = ShypQuickLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		296150AB0C4BF2C7ADEE5814 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		A10C8FBA5EADAD336C6E9754 /* ShypQuickLiveActivityBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShypQuickLiveActivityBundle.swift; sourceTree = "<group>"; };
+		B8E8989E21F87DBF2B8198EF /* ShypQuickLiveActivityWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShypQuickLiveActivityWidget.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		163E46AA2F8EBEE000040733 /* ShypQuick */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
 			path = ShypQuick;
 			sourceTree = "<group>";
 		};
@@ -31,14 +65,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B1ED2130236B121A64276EDF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4EB7915EA17619DDD9D9CF40 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		145E3A25F98CB7D49119C1B4 /* ShypQuickLiveActivity */ = {
+			isa = PBXGroup;
+			children = (
+				A10C8FBA5EADAD336C6E9754 /* ShypQuickLiveActivityBundle.swift */,
+				B8E8989E21F87DBF2B8198EF /* ShypQuickLiveActivityWidget.swift */,
+			);
+			name = ShypQuickLiveActivity;
+			path = ShypQuickLiveActivity;
+			sourceTree = "<group>";
+		};
 		163E469F2F8EBEE000040733 = {
 			isa = PBXGroup;
 			children = (
 				163E46AA2F8EBEE000040733 /* ShypQuick */,
 				163E46A92F8EBEE000040733 /* Products */,
+				5DE2A4AC5DF515818FF48AA0 /* Frameworks */,
+				145E3A25F98CB7D49119C1B4 /* ShypQuickLiveActivity */,
 			);
 			sourceTree = "<group>";
 		};
@@ -46,8 +100,25 @@
 			isa = PBXGroup;
 			children = (
 				163E46A82F8EBEE000040733 /* ShypQuick.app */,
+				24BEC5E4973974A29FB54FAD /* ShypQuickLiveActivity.appex */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		3127F715907247AD40543F10 /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				296150AB0C4BF2C7ADEE5814 /* Foundation.framework */,
+			);
+			name = iOS;
+			sourceTree = "<group>";
+		};
+		5DE2A4AC5DF515818FF48AA0 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				3127F715907247AD40543F10 /* iOS */,
+			);
+			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -60,10 +131,12 @@
 				163E46A42F8EBEE000040733 /* Sources */,
 				163E46A52F8EBEE000040733 /* Frameworks */,
 				163E46A62F8EBEE000040733 /* Resources */,
+				EEB98739B81202EB9F0C0D43 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				6CC20181319341A30CC39ACF /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				163E46AA2F8EBEE000040733 /* ShypQuick */,
@@ -75,6 +148,23 @@
 			productName = ShypQuick;
 			productReference = 163E46A82F8EBEE000040733 /* ShypQuick.app */;
 			productType = "com.apple.product-type.application";
+		};
+		A3C28009DB9700EFFEA402CB /* ShypQuickLiveActivity */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 69C5F4D4D0F62FCDD75C460F /* Build configuration list for PBXNativeTarget "ShypQuickLiveActivity" */;
+			buildPhases = (
+				BF2261460C464DD69F1581DA /* Sources */,
+				B1ED2130236B121A64276EDF /* Frameworks */,
+				C4EE174FF1417B3C0AE3D3E2 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = ShypQuickLiveActivity;
+			productName = ShypQuickLiveActivity;
+			productReference = 24BEC5E4973974A29FB54FAD /* ShypQuickLiveActivity.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -109,12 +199,20 @@
 			projectRoot = "";
 			targets = (
 				163E46A72F8EBEE000040733 /* ShypQuick */,
+				A3C28009DB9700EFFEA402CB /* ShypQuickLiveActivity */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		163E46A62F8EBEE000040733 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C4EE174FF1417B3C0AE3D3E2 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -131,7 +229,25 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		BF2261460C464DD69F1581DA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ABE36AE46DCACFC7B4847E1E /* ShypQuickLiveActivityBundle.swift in Sources */,
+				9ECC24D2C657626E2E9F7AB1 /* ShypQuickLiveActivityWidget.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		6CC20181319341A30CC39ACF /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = ShypQuickLiveActivity;
+			target = A3C28009DB9700EFFEA402CB /* ShypQuickLiveActivity */;
+			targetProxy = A57C1DC3B1E6539B0B518B06 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		163E46B12F8EBEE100040733 /* Debug */ = {
@@ -267,9 +383,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "ShypQuick uses the camera so you can photograph items for your driver.";
-				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "ShypQuick uses your location to match you with nearby drivers and suggest pickup/dropoff addresses.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "ShypQuick accesses your photos so you can attach an item picture to your delivery.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -304,9 +420,9 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "ShypQuick uses the camera so you can photograph items for your driver.";
-				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "ShypQuick uses your location to match you with nearby drivers and suggest pickup/dropoff addresses.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "ShypQuick accesses your photos so you can attach an item picture to your delivery.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -329,6 +445,61 @@
 			};
 			name = Release;
 		};
+		955501919AF81046728BDE17 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CG89RY4W6R;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "ShypQuick Live";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Dev.Shyp-Quick.ShypQuickLiveActivity";
+				PRODUCT_NAME = ShypQuickLiveActivity;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		F4E9914A0C2F9D5CC97326C4 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CG89RY4W6R;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "ShypQuick Live";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Dev.Shyp-Quick.ShypQuickLiveActivity";
+				PRODUCT_NAME = ShypQuickLiveActivity;
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -346,6 +517,15 @@
 			buildConfigurations = (
 				163E46B42F8EBEE100040733 /* Debug */,
 				163E46B52F8EBEE100040733 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		69C5F4D4D0F62FCDD75C460F /* Build configuration list for PBXNativeTarget "ShypQuickLiveActivity" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				F4E9914A0C2F9D5CC97326C4 /* Release */,
+				955501919AF81046728BDE17 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
