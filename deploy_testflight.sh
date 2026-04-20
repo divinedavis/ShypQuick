@@ -99,16 +99,21 @@ sleep 30  # Initial wait for build to appear
 
 JWT=$(generate_jwt)
 
-# Find the new build by version number
+# Find the new build by version number. `|| echo ""` keeps the pipe from
+# killing the script under `set -euo pipefail` when curl or python returns
+# something unparseable (transient Apple 5xx, flaky network, etc).
 for attempt in $(seq 1 20); do
   BUILD_ID=$(curl -s "https://api.appstoreconnect.apple.com/v1/builds?filter%5Bapp%5D=$APP_ID&filter%5Bversion%5D=$NEW_BUILD&fields%5Bbuilds%5D=version,processingState" \
-    -H "Authorization: Bearer $JWT" | python3 -c "
+    -H "Authorization: Bearer $JWT" 2>/dev/null | python3 -c "
 import sys,json
-d=json.load(sys.stdin)
-builds=d.get('data',[])
-if builds and builds[0]['attributes']['processingState']=='VALID':
-    print(builds[0]['id'])
-" 2>/dev/null)
+try:
+    d=json.load(sys.stdin)
+    builds=d.get('data',[])
+    if builds and builds[0]['attributes']['processingState']=='VALID':
+        print(builds[0]['id'])
+except Exception:
+    pass
+" 2>/dev/null || echo "")
 
   if [ -n "$BUILD_ID" ]; then
     echo "✅ Build processed: $BUILD_ID"
@@ -146,11 +151,14 @@ for attempt in $(seq 1 40); do
   if [ $attempt -eq 15 ]; then JWT=$(generate_jwt); fi
 
   REVIEW_STATE=$(curl -s "https://api.appstoreconnect.apple.com/v1/builds/$BUILD_ID/betaAppReviewSubmission" \
-    -H "Authorization: Bearer $JWT" | python3 -c "
+    -H "Authorization: Bearer $JWT" 2>/dev/null | python3 -c "
 import sys,json
-d=json.load(sys.stdin)
-print(d.get('data',{}).get('attributes',{}).get('betaReviewState','UNKNOWN'))
-" 2>/dev/null)
+try:
+    d=json.load(sys.stdin)
+    print(d.get('data',{}).get('attributes',{}).get('betaReviewState','UNKNOWN'))
+except Exception:
+    print('UNKNOWN')
+" 2>/dev/null || echo "UNKNOWN")
 
   echo "   Review state: $REVIEW_STATE (attempt $attempt/20)"
 
