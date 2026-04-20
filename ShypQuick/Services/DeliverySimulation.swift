@@ -61,12 +61,13 @@ final class DeliverySimulation: ObservableObject {
         cancel()
         dispatchedAt = Date()
         phase = .searching
-        Task {
+        animationTask = Task {
             do {
                 guard let driver = try await findClosestDriver(to: pickup) else {
-                    phase = .failed("No drivers online nearby.")
+                    if !Task.isCancelled { phase = .failed("No drivers online nearby.") }
                     return
                 }
+                if Task.isCancelled { return }
                 driverName = driver.name
                 driverPosition = driver.location
                 phase = .assigned(driverName: driver.name)
@@ -76,6 +77,7 @@ final class DeliverySimulation: ObservableObject {
                 )
 
                 try? await Task.sleep(nanoseconds: 900_000_000)
+                if Task.isCancelled { return }
                 phase = .enRouteToPickup
 
                 try await animate(
@@ -84,8 +86,10 @@ final class DeliverySimulation: ObservableObject {
                     routeMode: true,
                     durationSeconds: 12
                 )
+                if Task.isCancelled { return }
                 phase = .atPickup
                 try? await Task.sleep(nanoseconds: 1_500_000_000)
+                if Task.isCancelled { return }
 
                 phase = .enRouteToDropoff
                 try await animate(
@@ -94,9 +98,9 @@ final class DeliverySimulation: ObservableObject {
                     routeMode: true,
                     durationSeconds: 20
                 )
-                phase = .delivered
+                if !Task.isCancelled { phase = .delivered }
             } catch {
-                phase = .failed(error.localizedDescription)
+                if !Task.isCancelled { phase = .failed(error.localizedDescription) }
             }
         }
     }
@@ -104,6 +108,10 @@ final class DeliverySimulation: ObservableObject {
     func cancel() {
         animationTask?.cancel()
         animationTask = nil
+    }
+
+    deinit {
+        animationTask?.cancel()
     }
 
     // MARK: - Driver lookup

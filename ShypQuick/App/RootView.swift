@@ -26,9 +26,16 @@ struct MainTabView: View {
                     .tabItem { Label("Deliver", systemImage: "car.fill") }
                 ScheduledJobsView()
                     .tabItem { Label("Scheduled", systemImage: "calendar.badge.clock") }
-            case .customer, .both:
+            case .customer:
                 CustomerHomeView(profile: profile)
                     .tabItem { Label("Send", systemImage: "shippingbox.fill") }
+                MyScheduledView()
+                    .tabItem { Label("Scheduled", systemImage: "calendar.badge.clock") }
+            case .both:
+                CustomerHomeView(profile: profile)
+                    .tabItem { Label("Send", systemImage: "shippingbox.fill") }
+                DriverHomeView()
+                    .tabItem { Label("Deliver", systemImage: "car.fill") }
                 MyScheduledView()
                     .tabItem { Label("Scheduled", systemImage: "calendar.badge.clock") }
             }

@@ -44,6 +44,7 @@ final class AddressSearchService: NSObject, ObservableObject, MKLocalSearchCompl
         if trimmed.isEmpty {
             suggestions = []
             completer.cancel()
+            completer.queryFragment = ""
             return
         }
         completer.queryFragment = trimmed
@@ -94,8 +95,11 @@ final class AddressSearchService: NSObject, ObservableObject, MKLocalSearchCompl
 
     nonisolated func completerDidUpdateResults(_ completer: MKLocalSearchCompleter) {
         let results = completer.results
+        let currentFragment = completer.queryFragment
         Task { @MainActor in
             if self.isLocked { return }
+            // Drop stale callbacks for a query the user has since cleared.
+            if currentFragment.isEmpty { return }
             var merged: [AddressSuggestion] = []
             if let recent = self.recentSuggestionIfAny() {
                 merged.append(recent)

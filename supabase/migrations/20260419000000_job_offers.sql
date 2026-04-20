@@ -16,7 +16,8 @@ create table if not exists public.job_offers (
   status text not null default 'pending'
     check (status in ('pending', 'accepted', 'declined', 'expired')),
   driver_id uuid references public.profiles(id),
-  created_at timestamptz default now()
+  created_at timestamptz default now(),
+  constraint job_offers_total_cents_nonneg check (total_cents >= 0)
 );
 
 create index if not exists job_offers_status_idx on public.job_offers(status);

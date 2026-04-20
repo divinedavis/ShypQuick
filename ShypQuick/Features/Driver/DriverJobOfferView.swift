@@ -9,7 +9,7 @@ struct DriverJobOfferView: View {
     let onDecline: () -> Void
 
     @State private var secondsRemaining: Int = 300
-    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    @State private var timerCancellable: AnyCancellable?
 
     private var driverEarningsCents: Int {
         Int(Double(offer.totalCents) * 0.70)
@@ -19,6 +19,12 @@ struct DriverJobOfferView: View {
         guard let driverLocation else { return nil }
         let pickup = CLLocation(latitude: offer.pickupLat, longitude: offer.pickupLng)
         return driverLocation.distance(from: pickup) / 1609.344
+    }
+
+    private var timeDisplay: String {
+        let minutes = secondsRemaining / 60
+        let seconds = secondsRemaining % 60
+        return String(format: "%d:%02d", minutes, seconds)
     }
 
     var body: some View {
@@ -32,7 +38,7 @@ struct DriverJobOfferView: View {
                         .scaledToFit()
                         .frame(height: 40)
                     Spacer()
-                    Text("\(secondsRemaining / 60):\(String(format: "%02d", secondsRemaining % 60))")
+                    Text(timeDisplay)
                         .font(.title3.bold().monospacedDigit())
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12).padding(.vertical, 6)
@@ -75,13 +81,24 @@ struct DriverJobOfferView: View {
             }
             .padding()
         }
-        .onReceive(timer) { _ in
-            if secondsRemaining > 1 {
-                secondsRemaining -= 1
-            } else if secondsRemaining == 1 {
-                secondsRemaining = 0
-                onDecline()
-            }
+        .onAppear {
+            // Start a fresh timer each time the view appears so a re-present
+            // doesn't stack multiple publishers or inherit an old countdown.
+            secondsRemaining = 300
+            timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+                .autoconnect()
+                .sink { _ in
+                    if secondsRemaining > 1 {
+                        secondsRemaining -= 1
+                    } else if secondsRemaining == 1 {
+                        secondsRemaining = 0
+                        onDecline()
+                    }
+                }
+        }
+        .onDisappear {
+            timerCancellable?.cancel()
+            timerCancellable = nil
         }
     }
 

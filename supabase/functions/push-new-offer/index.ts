@@ -1,6 +1,6 @@
 // Supabase Edge Function: push-new-offer
 // Triggered by a database webhook on job_offers INSERT.
-// Sends APNs push notifications to all drivers with stored tokens.
+// Sends APNs push notifications to all online drivers with stored tokens.
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -11,7 +11,11 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const APNS_KEY_ID = Deno.env.get("APNS_KEY_ID")!;
 const APNS_TEAM_ID = Deno.env.get("APNS_TEAM_ID")!;
 const APNS_PRIVATE_KEY = Deno.env.get("APNS_PRIVATE_KEY")!;
+// Shared secret the DB trigger sends in `x-push-new-offer-secret`. If set, we
+// reject requests that don't match — closes the abuse hole from --no-verify-jwt.
+const WEBHOOK_SECRET = Deno.env.get("PUSH_WEBHOOK_SECRET") ?? "";
 const BUNDLE_ID = "com.Dev.Shyp-Quick";
+const APNS_PAYLOAD_MAX_BYTES = 4096;
 
 // APNs endpoint (use api.push.apple.com for production)
 // Try production first (TestFlight/App Store), fall back to sandbox (Xcode)
@@ -32,6 +36,15 @@ async function getApnsToken(): Promise<string> {
 
 serve(async (req) => {
   try {
+    // Reject requests missing the shared secret (belt-and-suspenders since
+    // function is deployed with --no-verify-jwt so it can be called from pg_net).
+    if (WEBHOOK_SECRET) {
+      const got = req.headers.get("x-push-new-offer-secret") ?? "";
+      if (got !== WEBHOOK_SECRET) {
+        return new Response("Forbidden", { status: 403 });
+      }
+    }
+
     const payload = await req.json();
     const record = payload.record;
 
@@ -77,9 +90,31 @@ serve(async (req) => {
       offer_id: record.id,
     };
 
+    const body = JSON.stringify(notification);
+    if (new TextEncoder().encode(body).length > APNS_PAYLOAD_MAX_BYTES) {
+      return new Response(
+        JSON.stringify({ error: "payload_too_large", bytes: body.length }),
+        { status: 413, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    // Delete a token that APNs has permanently rejected (410 Gone, or 400
+    // BadDeviceToken). Swallow errors — worst case we retry deletion later.
+    async function purgeToken(deviceToken: string, reason: string) {
+      try {
+        await supabase
+          .from("push_tokens")
+          .delete()
+          .eq("device_token", deviceToken);
+      } catch (_) { /* ignore */ }
+      console.log(`purged token ${deviceToken.substring(0, 8)}… (${reason})`);
+    }
+
     // Send to all drivers, trying production then sandbox
     const results = await Promise.allSettled(
       tokens.map(async ({ device_token }: { device_token: string }) => {
+        let lastStatus = 0;
+        let lastBody = "";
         for (const host of APNS_HOSTS) {
           const resp = await fetch(
             `${host}/3/device/${device_token}`,
@@ -92,18 +127,25 @@ serve(async (req) => {
                 "apns-priority": "10",
                 "content-type": "application/json",
               },
-              body: JSON.stringify(notification),
+              body,
             }
           );
-          const respBody = await resp.text();
+          lastStatus = resp.status;
+          lastBody = await resp.text();
           if (resp.status === 200) {
             return { device_token: device_token.substring(0, 8), status: 200, host };
           }
-          // If last host also failed, return the error
-          if (host === APNS_HOSTS[APNS_HOSTS.length - 1]) {
-            return { device_token: device_token.substring(0, 8), status: resp.status, body: respBody };
+          // 410 Gone or 400 BadDeviceToken → token is dead, don't retry other host.
+          let reason = "";
+          try {
+            reason = (JSON.parse(lastBody)?.reason ?? "") as string;
+          } catch (_) { /* not json */ }
+          if (resp.status === 410 || reason === "BadDeviceToken" || reason === "Unregistered") {
+            await purgeToken(device_token, `${resp.status} ${reason}`);
+            return { device_token: device_token.substring(0, 8), status: resp.status, purged: true };
           }
         }
+        return { device_token: device_token.substring(0, 8), status: lastStatus, body: lastBody };
       })
     );
 

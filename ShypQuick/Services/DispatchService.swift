@@ -150,6 +150,9 @@ final class DispatchService: ObservableObject {
     @Published var pendingOffer: JobOffer?
     @Published var activeJob: JobOffer?
     @Published var notificationTapped = false
+    @Published private(set) var isAccepting = false
+    @Published private(set) var isPosting = false
+    @Published var lastPostError: String?
 
     private var client: SupabaseClient { SupabaseService.shared.client }
     private var realtimeChannel: RealtimeChannelV2?
@@ -170,11 +173,17 @@ final class DispatchService: ObservableObject {
         categoryTitle: String,
         categoryIcon: String
     ) {
+        guard !isPosting else { return }
+        isPosting = true
+        lastPostError = nil
         Task {
+            defer { Task { @MainActor in self.isPosting = false } }
             do {
                 let userId = try await client.auth.session.user.id
 
-                // Upload photo if provided
+                // Upload photo if provided. If upload fails, we fail the
+                // whole post rather than silently saving an offer with no
+                // photo — the customer wanted that photo attached.
                 var uploadedUrl: String?
                 if let photoData {
                     let fileName = "\(UUID().uuidString).jpg"
@@ -204,7 +213,10 @@ final class DispatchService: ObservableObject {
                     .insert(insert)
                     .execute()
             } catch {
-                // Fallback to local-only if DB write fails
+                print("DispatchService.postOffer error:", error)
+                lastPostError = error.localizedDescription
+                // Surface a local fallback so the simulation / route view can
+                // still run for the customer, but keep the error visible.
                 pendingOffer = JobOffer(
                     id: UUID(),
                     pickupAddress: pickupAddress,
@@ -250,7 +262,7 @@ final class DispatchService: ObservableObject {
                         self.pendingOffer = JobOffer(row: row)
                     }
                 } catch {
-                    // Decode error — skip
+                    print("DispatchService realtime decode error:", error)
                 }
             }
         }
@@ -288,18 +300,34 @@ final class DispatchService: ObservableObject {
     // MARK: - Driver: accept / decline
 
     func accept(_ offer: JobOffer) {
+        guard !isAccepting else { return }
         guard pendingOffer?.id == offer.id else { return }
-        activeJob = offer
-        pendingOffer = nil
+        isAccepting = true
         Task {
+            defer { Task { @MainActor in self.isAccepting = false } }
             do {
                 let userId = try await client.auth.session.user.id
-                try await client
+                // Only transition if still `pending` — the DB filter plus RLS
+                // enforce that another driver couldn't have beaten us here.
+                let rows: [JobOfferRow] = try await client
                     .from("job_offers")
                     .update(JobOfferUpdate(status: "accepted", driver_id: userId))
                     .eq("id", value: offer.id)
+                    .eq("status", value: "pending")
+                    .select()
                     .execute()
-            } catch { }
+                    .value
+                guard !rows.isEmpty else {
+                    // Someone else already accepted — clear without promoting.
+                    pendingOffer = nil
+                    return
+                }
+                activeJob = offer
+                pendingOffer = nil
+            } catch {
+                print("DispatchService.accept error:", error)
+                pendingOffer = nil
+            }
         }
     }
 
@@ -307,11 +335,16 @@ final class DispatchService: ObservableObject {
         guard pendingOffer?.id == offer.id else { return }
         pendingOffer = nil
         Task {
-            try? await client
-                .from("job_offers")
-                .update(JobOfferUpdate(status: "declined", driver_id: nil))
-                .eq("id", value: offer.id)
-                .execute()
+            do {
+                try await client
+                    .from("job_offers")
+                    .update(JobOfferUpdate(status: "declined", driver_id: nil))
+                    .eq("id", value: offer.id)
+                    .eq("status", value: "pending")
+                    .execute()
+            } catch {
+                print("DispatchService.decline error:", error)
+            }
         }
     }
 

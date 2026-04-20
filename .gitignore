@@ -21,6 +21,12 @@ Package.resolved
 ShypQuick/Resources/Secrets.plist
 *.env
 .env.local
+# Never commit signing / APNs keys
+*.p8
+AuthKey_*.p8
+*.pem
+*.p12
+*.mobileprovision
 
 # Fastlane
 fastlane/report.xml

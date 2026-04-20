@@ -21,6 +21,7 @@ final class SessionStore: ObservableObject {
             let profile = try await loadProfile(userId: session.user.id)
             state = .signedIn(profile)
         } catch {
+            print("SessionStore.bootstrap error:", error)
             state = .signedOut
         }
     }
@@ -70,34 +71,49 @@ final class SessionStore: ObservableObject {
         state = .signedIn(profile)
     }
 
+    func updateRole(_ role: UserRole) async throws {
+        guard case .signedIn(var profile) = state else { return }
+        struct RoleUpdate: Encodable { let role: String }
+        try await client
+            .from("profiles")
+            .update(RoleUpdate(role: role.rawValue))
+            .eq("id", value: profile.id)
+            .execute()
+        profile.role = role
+        state = .signedIn(profile)
+    }
+
     func signInWithApple(idToken: String, fullName: String?) async throws {
         let session = try await client.auth.signInWithIdToken(
             credentials: .init(provider: .apple, idToken: idToken)
         )
-        // Try to load existing profile; if none exists, create one.
-        do {
-            let profile = try await loadProfile(userId: session.user.id)
-            state = .signedIn(profile)
-        } catch {
-            // First Apple sign-in — create a profile row.
-            let name = fullName ?? session.user.email ?? "User"
-            let role = UserRole.customer
-            struct NewProfile: Encodable {
-                let id: UUID
-                let full_name: String
-                let role: String
-            }
-            try await client
-                .from("profiles")
-                .insert(NewProfile(id: session.user.id, full_name: name, role: role.rawValue))
-                .execute()
-            let profile = try await loadProfile(userId: session.user.id)
-            state = .signedIn(profile)
+        // The handle_new_user trigger inserts a row with role 'customer' default.
+        // Upsert by id so we don't collide with the trigger (race) or existing row.
+        let name = fullName ?? session.user.email ?? "User"
+        struct ProfileUpsert: Encodable {
+            let id: UUID
+            let full_name: String
         }
+        try await client
+            .from("profiles")
+            .upsert(
+                ProfileUpsert(id: session.user.id, full_name: name),
+                onConflict: "id"
+            )
+            .execute()
+        let profile = try await loadProfile(userId: session.user.id)
+        state = .signedIn(profile)
     }
 
     func signOut() async {
-        try? await client.auth.signOut()
+        // Best-effort clear the device's APNs token from our DB so the previous
+        // user stops receiving pushes on this device.
+        await PushNotificationService.shared.clearToken()
+        do {
+            try await client.auth.signOut()
+        } catch {
+            print("SessionStore.signOut server error:", error)
+        }
         state = .signedOut
     }
 

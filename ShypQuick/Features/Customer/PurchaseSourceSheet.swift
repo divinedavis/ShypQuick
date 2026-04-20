@@ -56,6 +56,7 @@ struct PurchaseSourceSheet: View {
                         .padding(.vertical, 6)
                 }
                 .buttonStyle(.borderedProminent)
+                .disabled(selection == nil)
                 .padding()
                 .background(.regularMaterial)
             }

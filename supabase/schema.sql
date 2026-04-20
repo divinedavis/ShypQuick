@@ -13,7 +13,7 @@ create table if not exists public.profiles (
   phone text,
   role text not null default 'customer' check (role in ('customer', 'driver', 'both')),
   avatar_url text,
-  rating numeric(2,1) default 5.0,
+  rating numeric(2,1) default 5.0 check (rating is null or (rating >= 1.0 and rating <= 5.0)),
   created_at timestamptz default now(),
   updated_at timestamptz default now()
 );
@@ -31,10 +31,15 @@ create policy "users can update their own profile"
 
 -- Auto-create profile row when a user signs up
 create or replace function public.handle_new_user()
-returns trigger language plpgsql security definer as $$
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
 begin
   insert into public.profiles (id, full_name)
-  values (new.id, new.raw_user_meta_data->>'full_name');
+  values (new.id, new.raw_user_meta_data->>'full_name')
+  on conflict (id) do nothing;
   return new;
 end;
 $$;
@@ -66,7 +71,7 @@ create table if not exists public.deliveries (
   status text not null default 'requested'
     check (status in ('requested', 'accepted', 'picked_up', 'delivered', 'cancelled')),
 
-  price_cents integer not null,
+  price_cents integer not null check (price_cents >= 0),
 
   requested_at timestamptz default now(),
   accepted_at timestamptz,
@@ -142,3 +147,12 @@ create policy "ratings viewable by everyone"
 create policy "users rate deliveries they participated in"
   on public.ratings for insert
   with check (auth.uid() = rater_id);
+
+create policy "users update their own ratings"
+  on public.ratings for update
+  using (auth.uid() = rater_id)
+  with check (auth.uid() = rater_id);
+
+create policy "users delete their own ratings"
+  on public.ratings for delete
+  using (auth.uid() = rater_id);

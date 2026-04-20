@@ -7,6 +7,7 @@ struct DriverHomeView: View {
     @State private var showSimulate = false
     @StateObject private var location = LocationService.shared
     @StateObject private var dispatch = DispatchService.shared
+    @Environment(\.scenePhase) private var scenePhase
     @State private var cameraPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
             center: CLLocationCoordinate2D(latitude: 40.6782, longitude: -73.9442),
@@ -83,6 +84,21 @@ struct DriverHomeView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(isOnline ? .red : .green)
 
+                    if location.permissionDenied {
+                        Button {
+                            if let url = URL(string: UIApplication.openSettingsURLString) {
+                                UIApplication.shared.open(url)
+                            }
+                        } label: {
+                            Label("Location disabled — open Settings", systemImage: "location.slash")
+                                .font(.caption.bold())
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 4)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(.red)
+                    }
+
                     if showSimulate {
                         Button {
                             createFakeOrder()
@@ -109,6 +125,14 @@ struct DriverHomeView: View {
                         span: MKCoordinateSpan(latitudeDelta: 0.04, longitudeDelta: 0.04)
                     )
                 )
+            }
+            .onChange(of: scenePhase) { _, phase in
+                // If the driver was online and the app goes to background, the
+                // OS may kill us; best-effort flip the DB flag to offline so
+                // we don't appear online in the dispatcher query forever.
+                if phase == .background && isOnline {
+                    dispatch.setDriverOnline(false)
+                }
             }
             .onChange(of: dispatch.notificationTapped) { _, tapped in
                 if tapped {

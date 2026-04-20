@@ -35,15 +35,18 @@ enum PricingService {
         dropoff: CLLocationCoordinate2D,
         sameHour: Bool
     ) -> Quote {
-        let distance = CLLocation(latitude: pickup.latitude, longitude: pickup.longitude)
+        let rawDistance = CLLocation(latitude: pickup.latitude, longitude: pickup.longitude)
             .distance(from: CLLocation(latitude: dropoff.latitude, longitude: dropoff.longitude))
+        // Guard against NaN (invalid coords) and negative numbers.
+        let distance = (rawDistance.isFinite && rawDistance >= 0) ? rawDistance : 0
         let miles = distance / 1609.344
 
         let base = baseCents(for: size)
         var mileageSurcharge = 0
         if distance > perMileThresholdMeters {
             let extraMiles = miles - 10.0
-            mileageSurcharge = Int(extraMiles * Double(perMileCents))
+            // Round (not truncate) to avoid systematic revenue loss on fractional miles.
+            mileageSurcharge = Int((extraMiles * Double(perMileCents)).rounded())
         }
 
         let rush = sameHour ? sameHourSurchargeCents : 0

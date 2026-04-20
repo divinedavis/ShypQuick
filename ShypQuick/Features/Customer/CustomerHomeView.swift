@@ -49,6 +49,19 @@ struct CustomerHomeView: View {
         return PricingService.quote(size: itemSize, pickup: pickup, dropoff: dropoff, sameHour: sameHour)
     }
 
+    private var canSubmit: Bool {
+        guard let p = pickupCoord, let d = dropoffCoord else { return false }
+        let pickupOk = !pickupAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && CLLocationCoordinate2DIsValid(p)
+            && !(p.latitude == 0 && p.longitude == 0)
+        let dropoffOk = !dropoffAddress.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            && CLLocationCoordinate2DIsValid(d)
+            && !(d.latitude == 0 && d.longitude == 0)
+        // Also block self-delivery (same pickup and dropoff).
+        let distinct = p.latitude != d.latitude || p.longitude != d.longitude
+        return pickupOk && dropoffOk && distinct
+    }
+
     private func resetForm() {
         pickupAddress = ""
         dropoffAddress = ""
@@ -139,7 +152,7 @@ struct CustomerHomeView: View {
                                 .padding(.vertical, 4)
                         }
                         .buttonStyle(.borderedProminent)
-                        .disabled(pickupCoord == nil || dropoffCoord == nil)
+                        .disabled(!canSubmit)
 
                         Button {
                             showingScheduleSheet = true
@@ -150,7 +163,7 @@ struct CustomerHomeView: View {
                         }
                         .buttonStyle(.borderedProminent)
                         .tint(.orange)
-                        .disabled(pickupCoord == nil || dropoffCoord == nil)
+                        .disabled(!canSubmit)
                     }
                 }
                 .padding()

@@ -144,7 +144,7 @@ struct ItemCategorySheet: View {
 
     private func submitWithPhoto(_ image: UIImage) {
         let data = image.jpegData(compressionQuality: 0.85)
-        let defaultCategory = ItemCategory.all.first!
+        guard let defaultCategory = ItemCategory.all.first else { return }
         onSelect(defaultCategory, data)
         dismiss()
     }

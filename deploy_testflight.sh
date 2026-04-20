@@ -32,6 +32,17 @@ print(jwt.encode(payload, key, algorithm='ES256', headers=headers))
 "
 }
 
+# ── 0. Pre-flight: require clean working tree ─────────
+# Otherwise the build-bump commit would drag in whatever random edits the
+# user had in flight, potentially leaking secrets or half-finished code.
+cd "$PROJECT_DIR"
+DIRTY=$(git status --porcelain)
+if [ -n "$DIRTY" ]; then
+  echo "❌ Working tree is dirty. Commit or stash first:"
+  echo "$DIRTY"
+  exit 1
+fi
+
 # ── 1. Increment build number ─────────────────────────
 CURRENT_BUILD=$(grep -m1 'CURRENT_PROJECT_VERSION' "$PBXPROJ" | sed 's/.*= //;s/;//')
 NEW_BUILD=$((CURRENT_BUILD + 1))

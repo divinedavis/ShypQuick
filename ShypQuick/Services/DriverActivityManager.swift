@@ -12,11 +12,14 @@ struct DriverActivityAttributes: ActivityAttributes {
 final class DriverActivityManager {
     static let shared = DriverActivityManager()
     private var currentActivity: Activity<DriverActivityAttributes>?
+    private var timerTask: Task<Void, Never>?
 
     private init() {}
 
     func startOnlineActivity() {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        // If already running, don't stack a second timer.
+        guard currentActivity == nil else { return }
 
         let attributes = DriverActivityAttributes()
         let state = DriverActivityAttributes.ContentState(
@@ -37,31 +40,36 @@ final class DriverActivityManager {
     }
 
     func stopOnlineActivity() {
+        timerTask?.cancel()
+        timerTask = nil
+        let activity = currentActivity
+        currentActivity = nil
         Task {
             let state = DriverActivityAttributes.ContentState(
                 status: "Offline",
                 minutesOnline: 0
             )
-            await currentActivity?.end(
+            await activity?.end(
                 .init(state: state, staleDate: nil),
                 dismissalPolicy: .immediate
             )
-            currentActivity = nil
         }
     }
 
     private func startTimer() {
-        Task {
+        timerTask?.cancel()
+        timerTask = Task { [weak self] in
             var minutes = 0
-            while currentActivity != nil {
+            while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(60))
+                if Task.isCancelled { return }
                 minutes += 1
-                guard currentActivity != nil else { return }
+                guard let self, let activity = self.currentActivity else { return }
                 let state = DriverActivityAttributes.ContentState(
                     status: "Online",
                     minutesOnline: minutes
                 )
-                await currentActivity?.update(.init(state: state, staleDate: nil))
+                await activity.update(.init(state: state, staleDate: nil))
             }
         }
     }
