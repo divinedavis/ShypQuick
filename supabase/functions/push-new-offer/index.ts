@@ -41,11 +41,21 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get push tokens for drivers only
+    // Get push tokens for online drivers only
+    const { data: onlineDrivers } = await supabase
+      .from("driver_locations")
+      .select("driver_id")
+      .eq("is_online", true);
+
+    const onlineIds = (onlineDrivers || []).map((d: any) => d.driver_id);
+    if (!onlineIds.length) {
+      return new Response("No online drivers", { status: 200 });
+    }
+
     const { data: tokens, error } = await supabase
       .from("push_tokens")
-      .select("device_token, user_id, profiles!inner(role)")
-      .in("profiles.role", ["driver", "both"]);
+      .select("device_token, user_id")
+      .in("user_id", onlineIds);
 
     if (error || !tokens?.length) {
       return new Response("No tokens", { status: 200 });

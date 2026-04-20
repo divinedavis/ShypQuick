@@ -296,6 +296,28 @@ final class DispatchService: ObservableObject {
         }
     }
 
+    func setDriverOnline(_ online: Bool) {
+        Task {
+            do {
+                let userId = try await client.auth.session.user.id
+                struct DriverLocationRow: Encodable {
+                    let driver_id: UUID
+                    let is_online: Bool
+                    let lat: Double
+                    let lng: Double
+                }
+                try await client
+                    .from("driver_locations")
+                    .upsert(DriverLocationRow(
+                        driver_id: userId,
+                        is_online: online,
+                        lat: 0, lng: 0
+                    ))
+                    .execute()
+            } catch { }
+        }
+    }
+
     func completeActiveJob() {
         guard let job = activeJob else { return }
         activeJob = nil

@@ -72,9 +72,11 @@ struct DriverHomeView: View {
                             location.requestPermission()
                             location.startUpdating()
                             dispatch.startListening()
+                            dispatch.setDriverOnline(true)
                             showSimulate = true
                         } else {
                             dispatch.stopListening()
+                            dispatch.setDriverOnline(false)
                             showSimulate = false
                         }
                     } label: {
@@ -118,6 +120,7 @@ struct DriverHomeView: View {
                     isOnline = true
                     location.requestPermission()
                     location.startUpdating()
+                    dispatch.setDriverOnline(true)
                     dispatch.notificationTapped = false
                 }
             }
