@@ -153,6 +153,10 @@ final class DispatchService: ObservableObject {
     @Published private(set) var isAccepting = false
     @Published private(set) var isPosting = false
     @Published var lastPostError: String?
+    /// Set when the driver taps a stale push notification for an offer that
+    /// is no longer pending. `DriverHomeView` shows this as an alert and
+    /// clears it.
+    @Published var tappedOfferUnavailable: String?
 
     private var client: SupabaseClient { SupabaseService.shared.client }
     private var realtimeChannel: RealtimeChannelV2?
@@ -276,6 +280,41 @@ final class DispatchService: ObservableObject {
                 await client.realtimeV2.removeChannel(channel)
                 realtimeChannel = nil
             }
+        }
+    }
+
+    /// Look up a specific offer by id and decide what to do with it when the
+    /// driver taps an APNs notification. If the offer is still `pending`, we
+    /// promote it so the accept/decline screen appears; otherwise we set
+    /// `tappedOfferUnavailable` so the UI can show a "no longer available"
+    /// alert instead of silently doing nothing (or, worse, showing an
+    /// unrelated offer that `fetchPendingOffers` happens to return).
+    func handleTappedOffer(id: UUID) async {
+        do {
+            let rows: [JobOfferRow] = try await client
+                .from("job_offers")
+                .select()
+                .eq("id", value: id)
+                .limit(1)
+                .execute()
+                .value
+            guard let row = rows.first else {
+                tappedOfferUnavailable = "This job is no longer available."
+                pendingOffer = nil
+                return
+            }
+            if row.status == "pending" {
+                pendingOffer = JobOffer(row: row)
+            } else {
+                // Anything else — accepted, declined, expired, delivered —
+                // means someone else already handled it (or we did on another
+                // device).
+                pendingOffer = nil
+                tappedOfferUnavailable = "This job is no longer available."
+            }
+        } catch {
+            print("DispatchService.handleTappedOffer error:", error)
+            tappedOfferUnavailable = "Couldn't load that job. Please try again."
         }
     }
 

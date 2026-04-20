@@ -80,15 +80,23 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         completionHandler([.banner, .sound, .badge])
     }
 
-    // Handle notification tap — auto go online and fetch offer
+    // Handle notification tap — auto go online and fetch the specific offer.
+    // We look up the offer by the `offer_id` APNs payload field so an old
+    // notification for a job someone else has already taken shows an alert
+    // instead of silently promoting an unrelated pending offer.
     func userNotificationCenter(
         _ center: UNUserNotificationCenter,
         didReceive response: UNNotificationResponse,
         withCompletionHandler completionHandler: @escaping () -> Void
     ) {
+        let info = response.notification.request.content.userInfo
+        let offerId = (info["offer_id"] as? String).flatMap(UUID.init(uuidString:))
         Task { @MainActor in
             DispatchService.shared.notificationTapped = true
             DispatchService.shared.startListening()
+            if let offerId {
+                await DispatchService.shared.handleTappedOffer(id: offerId)
+            }
         }
         completionHandler()
     }

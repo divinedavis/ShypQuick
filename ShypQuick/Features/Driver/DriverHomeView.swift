@@ -168,6 +168,20 @@ struct DriverHomeView: View {
                     dispatch.completeActiveJob()
                 }
             }
+            .alert(
+                "Job no longer available",
+                isPresented: Binding(
+                    get: { dispatch.tappedOfferUnavailable != nil },
+                    set: { if !$0 { dispatch.tappedOfferUnavailable = nil } }
+                ),
+                presenting: dispatch.tappedOfferUnavailable
+            ) { _ in
+                Button("OK", role: .cancel) {
+                    dispatch.tappedOfferUnavailable = nil
+                }
+            } message: { message in
+                Text(message)
+            }
         }
     }
 }
