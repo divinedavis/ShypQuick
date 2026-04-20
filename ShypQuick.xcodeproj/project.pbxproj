@@ -267,6 +267,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "ShypQuick uses the camera so you can photograph items for your driver.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "ShypQuick uses your location to match you with nearby drivers and suggest pickup/dropoff addresses.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "ShypQuick accesses your photos so you can attach an item picture to your delivery.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -303,6 +304,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "ShypQuick uses the camera so you can photograph items for your driver.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "ShypQuick uses your location to match you with nearby drivers and suggest pickup/dropoff addresses.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "ShypQuick accesses your photos so you can attach an item picture to your delivery.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

@@ -67,9 +67,11 @@ struct DriverHomeView: View {
                             dispatch.startListening()
                             dispatch.setDriverOnline(true)
                             showSimulate = true
+                            DriverActivityManager.shared.startOnlineActivity()
                         } else {
                             dispatch.stopListening()
                             dispatch.setDriverOnline(false)
+                            DriverActivityManager.shared.stopOnlineActivity()
                             showSimulate = false
                         }
                     } label: {
