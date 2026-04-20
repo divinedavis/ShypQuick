@@ -8,7 +8,7 @@ struct DriverJobOfferView: View {
     let onAccept: () -> Void
     let onDecline: () -> Void
 
-    @State private var secondsRemaining: Int = 15
+    @State private var secondsRemaining: Int = 300
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     private var driverEarningsCents: Int {
@@ -32,7 +32,7 @@ struct DriverJobOfferView: View {
                         .scaledToFit()
                         .frame(height: 40)
                     Spacer()
-                    Text("\(secondsRemaining)s")
+                    Text("\(secondsRemaining / 60):\(String(format: "%02d", secondsRemaining % 60))")
                         .font(.title3.bold().monospacedDigit())
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12).padding(.vertical, 6)
