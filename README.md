@@ -90,12 +90,22 @@ navigation, live tracking, photo of the item, payout — happens in one place.
 
 ## Screenshots
 
-> More screens shipping as the app matures. If you're on the TestFlight and
-> have shots you'd like to see here, reach out below.
-
-<p align="center">
+<table>
+<tr>
+<td align="center" width="33%">
   <img src="assets/screenshots/01-auth.png" width="240" alt="Welcome" />
-</p>
+  <br/><sub><b>Welcome</b><br/>Sign in with Apple or email.</sub>
+</td>
+<td align="center" width="33%">
+  <img src="assets/screenshots/02-customer.png" width="240" alt="Customer home" />
+  <br/><sub><b>Customer — Send a package</b><br/>Live map, address fields, same-hour rush toggle.</sub>
+</td>
+<td align="center" width="33%">
+  <img src="assets/screenshots/03-driver.png" width="240" alt="Driver home" />
+  <br/><sub><b>Driver — Go online</b><br/>One tap to start receiving jobs nearby.</sub>
+</td>
+</tr>
+</table>
 
 ## Architecture at a glance
 
@@ -155,6 +165,14 @@ Shipping a TestFlight build:
 
 ```bash
 ./deploy_testflight.sh
+```
+
+Regenerating README screenshots (Debug simulator builds only — stripped from Release):
+
+```bash
+xcrun simctl launch <sim-id> com.Dev.Shyp-Quick \
+  -SHYP_AUTO_LOGIN_EMAIL   you@example.com \
+  -SHYP_AUTO_LOGIN_PASSWORD yourPassword
 ```
 
 ## Contact

@@ -11,10 +11,40 @@ struct ShypQuickApp: App {
             RootView()
                 .environmentObject(session)
                 .task {
-                    await session.bootstrap()
-                    PushNotificationService.shared.requestPermission()
+                    let usedAutoLogin = await autoLoginIfRequested()
+                    if !usedAutoLogin {
+                        await session.bootstrap()
+                        PushNotificationService.shared.requestPermission()
+                    }
                 }
         }
+    }
+
+    /// Simulator-only shortcut: launch with
+    ///   `-SHYP_AUTO_LOGIN_EMAIL foo@bar.com -SHYP_AUTO_LOGIN_PASSWORD pwd`
+    /// to skip the auth screen and the push-permission prompt. Used for
+    /// README screenshots. Stripped from Release builds.
+    ///
+    /// - Returns: `true` if auto-login ran (successfully or not) — caller
+    ///   should skip the normal bootstrap/push-prompt path.
+    @MainActor
+    private func autoLoginIfRequested() async -> Bool {
+        #if DEBUG && targetEnvironment(simulator)
+        // `-KEY value` launch args land in UserDefaults automatically, which
+        // makes them easy to pass via `xcrun simctl launch`.
+        let defaults = UserDefaults.standard
+        guard let email = defaults.string(forKey: "SHYP_AUTO_LOGIN_EMAIL"),
+              let pwd = defaults.string(forKey: "SHYP_AUTO_LOGIN_PASSWORD"),
+              !email.isEmpty, !pwd.isEmpty else { return false }
+        do {
+            try await session.signIn(email: email, password: pwd)
+        } catch {
+            print("auto-login failed:", error)
+        }
+        return true
+        #else
+        return false
+        #endif
     }
 }
 

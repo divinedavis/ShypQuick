@@ -24,6 +24,13 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     func requestPermission() {
+        #if DEBUG && targetEnvironment(simulator)
+        // Screenshot harness: `-SHYP_SKIP_LOCATION_PROMPT 1` suppresses the
+        // system alert so the map behind it is visible in README captures.
+        if UserDefaults.standard.bool(forKey: "SHYP_SKIP_LOCATION_PROMPT") {
+            return
+        }
+        #endif
         manager.requestWhenInUseAuthorization()
     }
 
