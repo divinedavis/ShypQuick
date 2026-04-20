@@ -1,6 +1,4 @@
 <div align="center">
-  <img src="assets/icon.png" width="140" alt="ShypQuick" />
-
   <h1>SHYP Quick</h1>
 
   <p><strong>Shyp all the items you want.</strong></p>
