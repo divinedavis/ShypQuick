@@ -113,6 +113,14 @@ struct DriverHomeView: View {
                     )
                 )
             }
+            .onChange(of: dispatch.notificationTapped) { _, tapped in
+                if tapped {
+                    isOnline = true
+                    location.requestPermission()
+                    location.startUpdating()
+                    dispatch.notificationTapped = false
+                }
+            }
             .fullScreenCover(item: Binding(
                 get: { visibleOffer },
                 set: { _ in }

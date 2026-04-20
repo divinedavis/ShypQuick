@@ -142,6 +142,7 @@ final class DispatchService: ObservableObject {
 
     @Published var pendingOffer: JobOffer?
     @Published var activeJob: JobOffer?
+    @Published var notificationTapped = false
 
     private var client: SupabaseClient { SupabaseService.shared.client }
     private var realtimeChannel: RealtimeChannelV2?
