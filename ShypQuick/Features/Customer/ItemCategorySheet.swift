@@ -58,8 +58,11 @@ struct ItemCategorySheet: View {
                 }
             }
             .fullScreenCover(isPresented: $showingCamera) {
-                CameraPicker { image in attachedImage = image }
-                    .ignoresSafeArea()
+                CameraPicker { image in
+                    attachedImage = image
+                    submitWithPhoto(image)
+                }
+                .ignoresSafeArea()
             }
             .onChange(of: photoItem) { _, newValue in
                 guard let newValue else { return }
@@ -67,6 +70,7 @@ struct ItemCategorySheet: View {
                     if let data = try? await newValue.loadTransferable(type: Data.self),
                        let image = UIImage(data: data) {
                         attachedImage = image
+                        submitWithPhoto(image)
                     }
                 }
             }
@@ -136,6 +140,13 @@ struct ItemCategorySheet: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    private func submitWithPhoto(_ image: UIImage) {
+        let data = image.jpegData(compressionQuality: 0.85)
+        let defaultCategory = ItemCategory.all.first!
+        onSelect(defaultCategory, data)
+        dismiss()
     }
 
     private func categoryCard(_ category: ItemCategory) -> some View {
