@@ -137,40 +137,6 @@ navigation, live tracking, photo of the item, payout — happens in one place.
 - [ ] In-app ratings and reviews history
 - [ ] Public App Store release
 
-## Getting started (for devs)
-
-```bash
-git clone git@github.com:divinedavis/ShypQuick.git
-cd ShypQuick
-cp ShypQuick/Resources/Secrets.example.plist ShypQuick/Resources/Secrets.plist
-# fill in SUPABASE_URL and SUPABASE_ANON_KEY
-
-open ShypQuick.xcodeproj
-# ⌘R on any iOS 17+ simulator or device
-```
-
-Supabase side:
-
-```bash
-supabase link --project-ref <your-ref>
-supabase db push            # runs schema.sql + migrations
-supabase functions deploy push-new-offer --no-verify-jwt
-```
-
-Shipping a TestFlight build:
-
-```bash
-./deploy_testflight.sh
-```
-
-Regenerating README screenshots (Debug simulator builds only — stripped from Release):
-
-```bash
-xcrun simctl launch <sim-id> com.Dev.Shyp-Quick \
-  -SHYP_AUTO_LOGIN_EMAIL   you@example.com \
-  -SHYP_AUTO_LOGIN_PASSWORD yourPassword
-```
-
 ## Contact
 
 Currently in **private TestFlight beta**. Reach out to request access or
