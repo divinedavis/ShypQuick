@@ -24,6 +24,13 @@ struct CustomerHomeView: View {
     @State private var showingSchedulePicker = false
     @State private var activeField: Field?
     @FocusState private var focusedField: Field?
+    /// Set synchronously inside the suggestion-tap handler so the
+    /// text-onChange that fires immediately after can recognize the
+    /// programmatic write and skip re-querying. @FocusState is not
+    /// reliable for this — its writes are committed asynchronously
+    /// by UIKit, so `focusedField` may still report the old field
+    /// when the onChange runs.
+    @State private var suppressNextEdit: Field?
 
     struct RouteRequest: Hashable {
         let pickupAddress: String
@@ -87,9 +94,10 @@ struct CustomerHomeView: View {
               let lat = profile.homeLat,
               let lng = profile.homeLng else { return }
         didPrefillHome = true
+        pickupSearch.lockAfterSelection()
+        suppressNextEdit = .pickup
         pickupAddress = home
         pickupCoord = CLLocationCoordinate2D(latitude: lat, longitude: lng)
-        pickupSearch.lockAfterSelection()
     }
 
     private func dismissKeyboard() {
@@ -344,10 +352,16 @@ struct CustomerHomeView: View {
                         }
                     }
                     .onChange(of: text.wrappedValue) { _, newValue in
-                        // Only treat this as a user edit when the field
-                        // is focused; programmatic assignments (prefill,
-                        // suggestion selection) flow through here too and
-                        // must not nuke the coord we just resolved.
+                        // Programmatic writes (prefill, suggestion tap) flag
+                        // themselves before mutating the text so we can skip
+                        // the re-query path here and leave the dropdown closed.
+                        if suppressNextEdit == field {
+                            suppressNextEdit = nil
+                            return
+                        }
+                        // Otherwise this is a user edit; trust focus only as
+                        // a secondary check — the @FocusState write from a
+                        // programmatic dismiss may not have landed yet.
                         guard focusedField == field else { return }
                         search.unlock()
                         activeField = field
@@ -363,13 +377,14 @@ struct CustomerHomeView: View {
                 VStack(spacing: 0) {
                     ForEach(search.suggestions) { suggestion in
                         Button {
-                            // Lock + drop focus FIRST, before mutating text,
-                            // so the text-onChange below sees focusedField
-                            // == nil and refuses to repopulate the dropdown.
+                            // Lock first (clears suggestions + sets isLocked).
                             search.lockAfterSelection()
                             activeField = nil
-                            focusedField = nil
+                            // Synchronous suppress flag: the upcoming
+                            // text-onChange will see this and bail.
+                            suppressNextEdit = field
                             text.wrappedValue = suggestion.displayLine
+                            focusedField = nil
                             selected(suggestion)
                         } label: {
                             HStack(alignment: .top) {
