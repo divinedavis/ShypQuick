@@ -23,6 +23,7 @@ struct CustomerHomeView: View {
     @State private var showingScheduleSheet = false
     @State private var showingSchedulePicker = false
     @State private var activeField: Field?
+    @FocusState private var focusedField: Field?
 
     struct RouteRequest: Hashable {
         let pickupAddress: String
@@ -274,10 +275,12 @@ struct CustomerHomeView: View {
                 text: $pickupAddress,
                 field: .pickup,
                 search: pickupSearch,
+                invalidateCoord: { pickupCoord = nil },
                 selected: { s in
                     pickupSearch.lockAfterSelection()
                     pickupAddress = s.displayLine
                     activeField = nil
+                    focusedField = nil
                     pickupSearch.saveRecent(s)
                     dismissKeyboard()
                     Task {
@@ -295,10 +298,12 @@ struct CustomerHomeView: View {
                 text: $dropoffAddress,
                 field: .dropoff,
                 search: dropoffSearch,
+                invalidateCoord: { dropoffCoord = nil },
                 selected: { s in
                     dropoffSearch.lockAfterSelection()
                     dropoffAddress = s.displayLine
                     activeField = nil
+                    focusedField = nil
                     dropoffSearch.saveRecent(s)
                     dismissKeyboard()
                     Task {
@@ -318,20 +323,38 @@ struct CustomerHomeView: View {
         text: Binding<String>,
         field: Field,
         search: AddressSearchService,
+        invalidateCoord: @escaping () -> Void,
         selected: @escaping (AddressSuggestion) -> Void
     ) -> some View {
         VStack(spacing: 0) {
             HStack {
                 Image(systemName: icon).foregroundStyle(iconColor)
                 TextField(placeholder, text: text)
-                    .onTapGesture {
-                        activeField = field
-                        search.unlock()
+                    .focused($focusedField, equals: field)
+                    .onChange(of: focusedField) { _, newValue in
+                        // Focus is the canonical signal that the user wants
+                        // to edit this field — `onTapGesture` on TextField
+                        // is unreliable on iOS 17+. Reactivate suggestions
+                        // for whichever field has focus so typing populates
+                        // the dropdown.
+                        if newValue == field {
+                            search.unlock()
+                            activeField = field
+                            search.updateQuery(text.wrappedValue)
+                        }
                     }
                     .onChange(of: text.wrappedValue) { _, newValue in
-                        if search.isLocked { return }
+                        // Only treat this as a user edit when the field
+                        // is focused; programmatic assignments (prefill,
+                        // suggestion selection) flow through here too and
+                        // must not nuke the coord we just resolved.
+                        guard focusedField == field else { return }
+                        search.unlock()
                         activeField = field
                         search.updateQuery(newValue)
+                        // The coord saved alongside the previous selection
+                        // is stale the moment the user edits the text.
+                        invalidateCoord()
                     }
             }
             .padding()
