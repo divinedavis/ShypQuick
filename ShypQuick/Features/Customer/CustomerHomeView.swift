@@ -359,10 +359,16 @@ struct CustomerHomeView: View {
             }
             .padding()
 
-            if activeField == field && !search.suggestions.isEmpty {
+            if activeField == field && !search.isLocked && !search.suggestions.isEmpty {
                 VStack(spacing: 0) {
                     ForEach(search.suggestions) { suggestion in
                         Button {
+                            // Lock + drop focus FIRST, before mutating text,
+                            // so the text-onChange below sees focusedField
+                            // == nil and refuses to repopulate the dropdown.
+                            search.lockAfterSelection()
+                            activeField = nil
+                            focusedField = nil
                             text.wrappedValue = suggestion.displayLine
                             selected(suggestion)
                         } label: {
