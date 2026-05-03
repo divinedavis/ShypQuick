@@ -210,7 +210,10 @@ final class DispatchService: ObservableObject {
                 // the viewer mints a signed URL on demand.
                 var uploadedUrl: String?
                 if let photoData {
-                    let path = "\(userId.uuidString)/\(UUID().uuidString).jpg"
+                    // Storage RLS compares folder against auth.uid()::text which
+                    // Postgres formats lowercase; Swift's uuidString is uppercase.
+                    // Force lowercase on both segments so the policy match holds.
+                    let path = "\(userId.uuidString.lowercased())/\(UUID().uuidString.lowercased()).jpg"
                     try await client.storage
                         .from("item-photos")
                         .upload(path, data: photoData, options: .init(contentType: "image/jpeg"))
