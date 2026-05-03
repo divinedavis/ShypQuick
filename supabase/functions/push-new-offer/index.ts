@@ -11,9 +11,14 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const APNS_KEY_ID = Deno.env.get("APNS_KEY_ID")!;
 const APNS_TEAM_ID = Deno.env.get("APNS_TEAM_ID")!;
 const APNS_PRIVATE_KEY = Deno.env.get("APNS_PRIVATE_KEY")!;
-// Shared secret the DB trigger sends in `x-push-new-offer-secret`. If set, we
-// reject requests that don't match — closes the abuse hole from --no-verify-jwt.
-const WEBHOOK_SECRET = Deno.env.get("PUSH_WEBHOOK_SECRET") ?? "";
+// Shared secret the DB trigger sends in `x-push-new-offer-secret`. The
+// function is deployed with --no-verify-jwt so pg_net can call it; without
+// this header check, anyone could POST and spam push notifications. Fail
+// closed if the env var is missing.
+const WEBHOOK_SECRET = Deno.env.get("PUSH_WEBHOOK_SECRET");
+if (!WEBHOOK_SECRET) {
+  throw new Error("PUSH_WEBHOOK_SECRET env var is required");
+}
 const BUNDLE_ID = "com.Dev.Shyp-Quick";
 const APNS_PAYLOAD_MAX_BYTES = 4096;
 
@@ -36,13 +41,12 @@ async function getApnsToken(): Promise<string> {
 
 serve(async (req) => {
   try {
-    // Reject requests missing the shared secret (belt-and-suspenders since
-    // function is deployed with --no-verify-jwt so it can be called from pg_net).
-    if (WEBHOOK_SECRET) {
-      const got = req.headers.get("x-push-new-offer-secret") ?? "";
-      if (got !== WEBHOOK_SECRET) {
-        return new Response("Forbidden", { status: 403 });
-      }
+    // Reject requests missing the shared secret. Function is deployed with
+    // --no-verify-jwt so pg_net can call it; this header is the only thing
+    // gating it from public abuse.
+    const got = req.headers.get("x-push-new-offer-secret") ?? "";
+    if (got !== WEBHOOK_SECRET) {
+      return new Response("Forbidden", { status: 403 });
     }
 
     const payload = await req.json();

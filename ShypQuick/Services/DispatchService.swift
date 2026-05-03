@@ -163,6 +163,24 @@ final class DispatchService: ObservableObject {
 
     private init() {}
 
+    // MARK: - Photo URL resolution
+    //
+    // The bucket is private. `photoUrl` on a row is the storage object path
+    // (e.g. "<customer-uuid>/<random>.jpg"). The viewer mints a short-lived
+    // signed URL via this helper. Storage RLS lets the customer read their
+    // own uploads, the assigned driver read the offer's photo, and any
+    // driver read pending unassigned offer photos.
+    func signedPhotoURL(forPath path: String, expiresIn seconds: Int = 60 * 60) async -> URL? {
+        do {
+            return try await client.storage
+                .from("item-photos")
+                .createSignedURL(path: path, expiresIn: seconds)
+        } catch {
+            print("DispatchService.signedPhotoURL error:", error)
+            return nil
+        }
+    }
+
     // MARK: - Customer: post offer to Supabase
 
     func postOffer(
@@ -187,14 +205,16 @@ final class DispatchService: ObservableObject {
 
                 // Upload photo if provided. If upload fails, we fail the
                 // whole post rather than silently saving an offer with no
-                // photo — the customer wanted that photo attached.
+                // photo — the customer wanted that photo attached. Bucket is
+                // private; we store the object path (not a public URL) and
+                // the viewer mints a signed URL on demand.
                 var uploadedUrl: String?
                 if let photoData {
-                    let fileName = "\(UUID().uuidString).jpg"
+                    let path = "\(userId.uuidString)/\(UUID().uuidString).jpg"
                     try await client.storage
                         .from("item-photos")
-                        .upload(fileName, data: photoData, options: .init(contentType: "image/jpeg"))
-                    uploadedUrl = try client.storage.from("item-photos").getPublicURL(path: fileName).absoluteString
+                        .upload(path, data: photoData, options: .init(contentType: "image/jpeg"))
+                    uploadedUrl = path
                 }
 
                 let insert = JobOfferInsert(

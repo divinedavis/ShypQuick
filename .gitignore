@@ -34,5 +34,8 @@ fastlane/Preview.html
 fastlane/screenshots
 fastlane/test_output
 
+# Supabase CLI local state
+supabase/.temp/
+
 # CocoaPods (not used, but just in case)
 Pods/

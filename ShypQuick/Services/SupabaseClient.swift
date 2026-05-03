@@ -1,5 +1,6 @@
 import Foundation
 import Supabase
+import Auth
 
 enum SupabaseConfig {
     static var url: URL {
@@ -31,9 +32,15 @@ final class SupabaseService {
     let client: SupabaseClient
 
     private init() {
+        let options = SupabaseClientOptions(
+            auth: SupabaseClientOptions.AuthOptions(
+                storage: KeychainAuthStorage()
+            )
+        )
         self.client = SupabaseClient(
             supabaseURL: SupabaseConfig.url,
-            supabaseKey: SupabaseConfig.anonKey
+            supabaseKey: SupabaseConfig.anonKey,
+            options: options
         )
     }
 }

@@ -10,6 +10,7 @@ struct DriverJobOfferView: View {
 
     @State private var secondsRemaining: Int = 300
     @State private var timerCancellable: AnyCancellable?
+    @State private var photoURL: URL?
 
     private var driverEarningsCents: Int {
         Int(Double(offer.totalCents) * 0.70)
@@ -95,6 +96,11 @@ struct DriverJobOfferView: View {
                         onDecline()
                     }
                 }
+            if let path = offer.photoUrl, photoURL == nil {
+                Task {
+                    photoURL = await DispatchService.shared.signedPhotoURL(forPath: path)
+                }
+            }
         }
         .onDisappear {
             timerCancellable?.cancel()
@@ -111,7 +117,7 @@ struct DriverJobOfferView: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 180)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
-            } else if let urlString = offer.photoUrl, let url = URL(string: urlString) {
+            } else if let url = photoURL {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .success(let image):
