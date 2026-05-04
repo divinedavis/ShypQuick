@@ -64,7 +64,11 @@ final class DeliverySimulation: ObservableObject {
         animationTask = Task {
             do {
                 guard let driver = try await findClosestDriver(to: pickup) else {
-                    if !Task.isCancelled { phase = .failed("No drivers online nearby.") }
+                    if !Task.isCancelled {
+                        // Friendly copy: the offer was still posted and
+                        // drivers will be pushed when they come online.
+                        phase = .failed("No drivers online right now. We'll keep looking.")
+                    }
                     return
                 }
                 if Task.isCancelled { return }
@@ -133,37 +137,42 @@ final class DeliverySimulation: ObservableObject {
         var location: CLLocationCoordinate2D
     }
 
+    /// Customers can't SELECT from driver_locations directly under the
+    /// tightened RLS — they only see the driver's row once a job is
+    /// accepted. This RPC is SECURITY DEFINER on the server side and
+    /// returns just the closest match (name + coords) for the animation.
+    private struct ClosestDriverRow: Decodable {
+        let driver_id: String
+        let full_name: String?
+        let driver_lat: Double
+        let driver_lng: Double
+    }
+
+    private struct ClosestDriverParams: Encodable {
+        let pickup_lat: Double
+        let pickup_lng: Double
+    }
+
     private func findClosestDriver(to pickup: CLLocationCoordinate2D) async throws -> AssignedDriver? {
-        let locations: [DriverRow] = try await client
-            .from("driver_locations")
-            .select("driver_id, lat, lng")
-            .eq("is_online", value: true)
+        let rows: [ClosestDriverRow] = try await client
+            .rpc(
+                "find_closest_online_driver",
+                params: ClosestDriverParams(
+                    pickup_lat: pickup.latitude,
+                    pickup_lng: pickup.longitude
+                )
+            )
             .execute()
             .value
 
-        guard !locations.isEmpty else { return nil }
-
-        let pickupLoc = CLLocation(latitude: pickup.latitude, longitude: pickup.longitude)
-        let closest = locations.min { a, b in
-            let da = CLLocation(latitude: a.lat, longitude: a.lng).distance(from: pickupLoc)
-            let db = CLLocation(latitude: b.lat, longitude: b.lng).distance(from: pickupLoc)
-            return da < db
-        }!
-
-        guard let uuid = UUID(uuidString: closest.driver_id) else { return nil }
-
-        let profiles: [ProfileRow] = try await client
-            .from("profiles")
-            .select("id, full_name")
-            .eq("id", value: closest.driver_id)
-            .execute()
-            .value
-        let name = profiles.first?.full_name ?? "Your driver"
-
+        guard let row = rows.first,
+              let uuid = UUID(uuidString: row.driver_id) else {
+            return nil
+        }
         return AssignedDriver(
             id: uuid,
-            name: name,
-            location: CLLocationCoordinate2D(latitude: closest.lat, longitude: closest.lng)
+            name: row.full_name ?? "Your driver",
+            location: CLLocationCoordinate2D(latitude: row.driver_lat, longitude: row.driver_lng)
         )
     }
 

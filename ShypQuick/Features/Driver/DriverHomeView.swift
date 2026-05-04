@@ -33,10 +33,11 @@ struct DriverHomeView: View {
             pickup: pickup,
             dropoff: dropoff,
             size: size,
+            vehicleType: size == .small ? "car" : "truck",
             sameHour: sameHour,
             totalCents: quote.totalCents,
             photoData: nil,
-            categoryTitle: size == .small ? "Fits in a Car" : "Needs a Flatbed",
+            categoryTitle: size == .small ? "Car" : "Truck",
             categoryIcon: size == .small ? "car.fill" : "truck.box.fill"
         )
     }

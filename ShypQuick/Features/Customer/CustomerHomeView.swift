@@ -192,6 +192,7 @@ struct CustomerHomeView: View {
                         pickup: p,
                         dropoff: d,
                         size: category.size,
+                        vehicleType: category.vehicleType,
                         sameHour: sameHour,
                         totalCents: quote.totalCents,
                         photoData: photoData,

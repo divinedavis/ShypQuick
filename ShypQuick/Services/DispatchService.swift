@@ -16,6 +16,7 @@ struct JobOfferRow: Codable, Identifiable, Equatable {
     let dropoffLat: Double
     let dropoffLng: Double
     let size: String
+    let vehicleType: String?
     let sameHour: Bool
     let totalCents: Int
     let categoryTitle: String
@@ -35,6 +36,7 @@ struct JobOfferRow: Codable, Identifiable, Equatable {
         case dropoffLat = "dropoff_lat"
         case dropoffLng = "dropoff_lng"
         case size
+        case vehicleType = "vehicle_type"
         case sameHour = "same_hour"
         case totalCents = "total_cents"
         case categoryTitle = "category_title"
@@ -57,6 +59,7 @@ private struct JobOfferInsert: Encodable {
     let dropoff_lat: Double
     let dropoff_lng: Double
     let size: String
+    let vehicle_type: String
     let same_hour: Bool
     let total_cents: Int
     let category_title: String
@@ -80,6 +83,9 @@ struct JobOffer: Identifiable, Equatable {
     let dropoffLat: Double
     let dropoffLng: Double
     let size: ItemSize
+    /// "car" or "truck" — set explicitly by the customer; falls back to
+    /// size when an older row predates the column.
+    let vehicleType: String
     let sameHour: Bool
     let totalCents: Int
     let photoData: Data?
@@ -103,7 +109,9 @@ struct JobOffer: Identifiable, Equatable {
         self.pickupLng = row.pickupLng
         self.dropoffLat = row.dropoffLat
         self.dropoffLng = row.dropoffLng
-        self.size = ItemSize(rawValue: row.size) ?? .small
+        let resolvedSize = ItemSize(rawValue: row.size) ?? .small
+        self.size = resolvedSize
+        self.vehicleType = row.vehicleType ?? (resolvedSize == .small ? "car" : "truck")
         self.sameHour = row.sameHour
         self.totalCents = row.totalCents
         self.photoData = nil
@@ -117,7 +125,7 @@ struct JobOffer: Identifiable, Equatable {
         id: UUID, pickupAddress: String, dropoffAddress: String,
         pickupLat: Double, pickupLng: Double,
         dropoffLat: Double, dropoffLng: Double,
-        size: ItemSize, sameHour: Bool, totalCents: Int,
+        size: ItemSize, vehicleType: String, sameHour: Bool, totalCents: Int,
         photoData: Data?, photoUrl: String? = nil,
         categoryTitle: String, categoryIcon: String,
         createdAt: Date
@@ -130,6 +138,7 @@ struct JobOffer: Identifiable, Equatable {
         self.dropoffLat = dropoffLat
         self.dropoffLng = dropoffLng
         self.size = size
+        self.vehicleType = vehicleType
         self.sameHour = sameHour
         self.totalCents = totalCents
         self.photoData = photoData
@@ -189,6 +198,7 @@ final class DispatchService: ObservableObject {
         pickup: CLLocationCoordinate2D,
         dropoff: CLLocationCoordinate2D,
         size: ItemSize,
+        vehicleType: String,
         sameHour: Bool,
         totalCents: Int,
         photoData: Data?,
@@ -229,6 +239,7 @@ final class DispatchService: ObservableObject {
                     dropoff_lat: dropoff.latitude,
                     dropoff_lng: dropoff.longitude,
                     size: size.rawValue,
+                    vehicle_type: vehicleType,
                     same_hour: sameHour,
                     total_cents: totalCents,
                     category_title: categoryTitle,
@@ -250,7 +261,8 @@ final class DispatchService: ObservableObject {
                     dropoffAddress: dropoffAddress,
                     pickupLat: pickup.latitude, pickupLng: pickup.longitude,
                     dropoffLat: dropoff.latitude, dropoffLng: dropoff.longitude,
-                    size: size, sameHour: sameHour, totalCents: totalCents,
+                    size: size, vehicleType: vehicleType, sameHour: sameHour,
+                    totalCents: totalCents,
                     photoData: photoData, categoryTitle: categoryTitle,
                     categoryIcon: categoryIcon, createdAt: Date()
                 )

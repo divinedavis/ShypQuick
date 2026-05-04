@@ -145,6 +145,15 @@ struct DriverJobOfferView: View {
             Text(offer.categoryTitle)
                 .font(.title2.bold())
                 .foregroundStyle(.white)
+            HStack(spacing: 6) {
+                Image(systemName: offer.vehicleType == "truck" ? "truck.box.fill" : "car.fill")
+                Text(offer.vehicleType == "truck" ? "Truck" : "Car")
+                    .font(.subheadline.bold())
+            }
+            .foregroundStyle(.green)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .background(.white, in: Capsule())
         }
     }
 
