@@ -7,10 +7,11 @@ struct ItemCategory: Identifiable, Hashable {
     let description: String
     let icon: String
     let size: ItemSize
+    let vehicleType: String   // "car" or "truck" — sent to the driver alongside the offer
 
     static let all: [ItemCategory] = [
-        .init(id: "small",  title: "Fits in a Car",     description: "Boxes, bags, small items", icon: "car.fill",          size: .small),
-        .init(id: "large",  title: "Needs a Flatbed",   description: "Furniture, appliances",    icon: "truck.box.fill",    size: .large)
+        .init(id: "small",  title: "Car",   description: "Boxes, bags, small items",       icon: "car.fill",       size: .small, vehicleType: "car"),
+        .init(id: "large",  title: "Truck", description: "Furniture, appliances, flatbed", icon: "truck.box.fill", size: .large, vehicleType: "truck")
     ]
 }
 
