@@ -31,7 +31,7 @@ struct ItemCategorySheet: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("What are you shipping?")
                         .font(.title2.bold())
-                    Text("Pick the closest match so your driver knows what to bring. Add a photo if it helps.")
+                    Text("Add a photo (optional), then pick the vehicle your driver should bring.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
@@ -60,8 +60,8 @@ struct ItemCategorySheet: View {
             }
             .fullScreenCover(isPresented: $showingCamera) {
                 CameraPicker { image in
+                    // Just attach — let the user pick Car vs Truck below.
                     attachedImage = image
-                    submitWithPhoto(image)
                 }
                 .ignoresSafeArea()
             }
@@ -71,7 +71,6 @@ struct ItemCategorySheet: View {
                     if let data = try? await newValue.loadTransferable(type: Data.self),
                        let image = UIImage(data: data) {
                         attachedImage = image
-                        submitWithPhoto(image)
                     }
                 }
             }
@@ -141,13 +140,6 @@ struct ItemCategorySheet: View {
             )
         }
         .buttonStyle(.plain)
-    }
-
-    private func submitWithPhoto(_ image: UIImage) {
-        let data = image.jpegData(compressionQuality: 0.85)
-        guard let defaultCategory = ItemCategory.all.first else { return }
-        onSelect(defaultCategory, data)
-        dismiss()
     }
 
     private func categoryCard(_ category: ItemCategory) -> some View {
