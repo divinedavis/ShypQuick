@@ -467,4 +467,48 @@ final class DispatchService: ObservableObject {
                 .execute()
         }
     }
+
+    // MARK: - Driver: upgrade active job to a Truck
+
+    private struct UpgradeParams: Encodable { let p_offer_id: UUID }
+    private struct UpgradeResponse: Decodable {
+        let old_total_cents: Int
+        let new_total_cents: Int
+        let difference_cents: Int
+    }
+
+    /// Asks the server to flip the active job from Car to Truck and bump
+    /// the price accordingly. Returns nil on success, or an error message
+    /// suitable for the UI on failure. On success, refreshes the local
+    /// `activeJob` so the driver's view reflects the new total + label.
+    func upgradeActiveJobToTruck() async -> String? {
+        guard let job = activeJob else { return "No active job." }
+        guard job.vehicleType == "car" else { return "This job is already a Truck." }
+        do {
+            let resp: UpgradeResponse = try await client
+                .rpc("upgrade_offer_to_truck", params: UpgradeParams(p_offer_id: job.id))
+                .execute()
+                .value
+            activeJob = JobOffer(
+                id: job.id,
+                pickupAddress: job.pickupAddress,
+                dropoffAddress: job.dropoffAddress,
+                pickupLat: job.pickupLat, pickupLng: job.pickupLng,
+                dropoffLat: job.dropoffLat, dropoffLng: job.dropoffLng,
+                size: .large,
+                vehicleType: "truck",
+                sameHour: job.sameHour,
+                totalCents: resp.new_total_cents,
+                photoData: job.photoData,
+                photoUrl: job.photoUrl,
+                categoryTitle: "Truck",
+                categoryIcon: "truck.box.fill",
+                createdAt: job.createdAt
+            )
+            return nil
+        } catch {
+            print("DispatchService.upgradeActiveJobToTruck error:", error)
+            return error.localizedDescription
+        }
+    }
 }

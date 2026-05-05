@@ -2,14 +2,18 @@ import SwiftUI
 import MapKit
 
 struct DriverActiveJobView: View {
-    let job: JobOffer
+    let initialJob: JobOffer
     let onComplete: () -> Void
 
+    @ObservedObject private var dispatch = DispatchService.shared
     @State private var cameraPosition: MapCameraPosition
     @State private var pickedUp = false
+    @State private var showingUpgradeAlert = false
+    @State private var upgradeError: String?
+    @State private var isUpgrading = false
 
     init(job: JobOffer, onComplete: @escaping () -> Void) {
-        self.job = job
+        self.initialJob = job
         self.onComplete = onComplete
         let midLat = (job.pickupLat + job.dropoffLat) / 2
         let midLng = (job.pickupLng + job.dropoffLng) / 2
@@ -21,9 +25,15 @@ struct DriverActiveJobView: View {
         ))
     }
 
+    /// Prefer the live activeJob (reflects post-upgrade price) over the
+    /// captured initial value.
+    private var job: JobOffer { dispatch.activeJob ?? initialJob }
+
     private var driverEarningsCents: Int {
         Int(Double(job.totalCents) * 0.70)
     }
+
+    private var truckUpgradeDifferenceCents: Int { 15_000 - 4_000 }
 
     /// Open Apple Maps with driving directions to the given coordinate.
     /// Source is omitted so Maps uses the device's current location.
@@ -88,6 +98,24 @@ struct DriverActiveJobView: View {
                     .buttonStyle(.borderedProminent)
                     .tint(pickedUp ? .red : .green)
 
+                    if !pickedUp && job.vehicleType == "car" {
+                        Button {
+                            showingUpgradeAlert = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "truck.box.fill")
+                                Text("Need a Truck? +\(PricingService.Quote.format(truckUpgradeDifferenceCents))")
+                                    .bold()
+                                if isUpgrading { ProgressView().tint(.white) }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                        }
+                        .buttonStyle(.borderedProminent)
+                        .tint(.orange)
+                        .disabled(isUpgrading)
+                    }
+
                     HStack(spacing: 12) {
                         NavigationLink {
                             ChatView(isDriver: true)
@@ -128,6 +156,26 @@ struct DriverActiveJobView: View {
             }
             .navigationTitle(pickedUp ? "En route to dropoff" : "Head to pickup")
             .navigationBarTitleDisplayMode(.inline)
+            .alert("Upgrade to Truck?", isPresented: $showingUpgradeAlert) {
+                Button("Cancel", role: .cancel) {}
+                Button("Upgrade") {
+                    Task {
+                        isUpgrading = true
+                        upgradeError = await DispatchService.shared.upgradeActiveJobToTruck()
+                        isUpgrading = false
+                    }
+                }
+            } message: {
+                Text("This adds \(PricingService.Quote.format(truckUpgradeDifferenceCents)) to the fare and tells the customer the item needs a Truck.")
+            }
+            .alert(
+                "Couldn't upgrade",
+                isPresented: Binding(get: { upgradeError != nil }, set: { if !$0 { upgradeError = nil } })
+            ) {
+                Button("OK", role: .cancel) { upgradeError = nil }
+            } message: {
+                Text(upgradeError ?? "")
+            }
         }
     }
 }
