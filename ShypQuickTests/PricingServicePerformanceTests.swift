@@ -18,9 +18,7 @@ final class PricingServicePerformanceTests: XCTestCase {
                     pickup: pickup, dropoff: dropoff,
                     sameHour: true,
                     stairsFloors: 3,
-                    twoManCrew: true,
-                    assembly: true,
-                    applianceHookup: true
+                    twoManCrew: true
                 )
             }
         }

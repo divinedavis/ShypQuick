@@ -24,8 +24,6 @@ final class PricingFlowUITests: XCTestCase {
             app.switches["twoManCrewToggle"].waitForExistence(timeout: 8),
             "Two-man crew toggle should reveal after expanding Add-ons"
         )
-        XCTAssertTrue(app.switches["assemblyToggle"].waitForExistence(timeout: 2))
-        XCTAssertTrue(app.switches["applianceHookupToggle"].waitForExistence(timeout: 2))
     }
 
     func testRushToggleIsLabelledFiftyDollars() {

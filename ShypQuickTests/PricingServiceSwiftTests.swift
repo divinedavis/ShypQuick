@@ -36,8 +36,6 @@ struct PricingServiceSwiftTests {
         #expect(PricingService.sameHourSurchargeCents == 5_000)
         #expect(PricingService.stairsPerFloorCents    == 2_500)
         #expect(PricingService.twoManCrewCents        == 7_500)
-        #expect(PricingService.assemblyCents          == 5_000)
-        #expect(PricingService.applianceHookupCents   == 4_000)
     }
 
     @Test("Driver share is the top of the strategy doc range")
@@ -48,16 +46,14 @@ struct PricingServiceSwiftTests {
     @Test("Surcharges struct produces the same quote as explicit args")
     func surchargesStructMatchesExplicitArgs() {
         let s = PricingService.Surcharges(
-            sameHour: true, stairsFloors: 2, twoManCrew: true,
-            assembly: false, applianceHookup: true
+            sameHour: true, stairsFloors: 2, twoManCrew: true
         )
         let viaStruct = PricingService.quote(
             size: .large, pickup: nearPickup, dropoff: nearDropoff, surcharges: s
         )
         let viaArgs = PricingService.quote(
             size: .large, pickup: nearPickup, dropoff: nearDropoff,
-            sameHour: true, stairsFloors: 2, twoManCrew: true,
-            assembly: false, applianceHookup: true
+            sameHour: true, stairsFloors: 2, twoManCrew: true
         )
         #expect(viaStruct == viaArgs)
     }

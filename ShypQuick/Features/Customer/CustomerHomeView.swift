@@ -20,8 +20,6 @@ struct CustomerHomeView: View {
     @State private var sameHour = false
     @State private var stairsFloors = 0
     @State private var twoManCrew = false
-    @State private var assembly = false
-    @State private var applianceHookup = false
     @State private var showingAddOns = false
     @State private var routeRequest: RouteRequest?
     @State private var showingCategorySheet = false
@@ -48,8 +46,6 @@ struct CustomerHomeView: View {
         let sameHour: Bool
         let stairsFloors: Int
         let twoManCrew: Bool
-        let assembly: Bool
-        let applianceHookup: Bool
     }
 
     @State private var cameraPosition: MapCameraPosition = .region(
@@ -65,9 +61,7 @@ struct CustomerHomeView: View {
         PricingService.Surcharges(
             sameHour: sameHour,
             stairsFloors: stairsFloors,
-            twoManCrew: twoManCrew,
-            assembly: assembly,
-            applianceHookup: applianceHookup
+            twoManCrew: twoManCrew
         )
     }
 
@@ -104,8 +98,6 @@ struct CustomerHomeView: View {
         sameHour = false
         stairsFloors = 0
         twoManCrew = false
-        assembly = false
-        applianceHookup = false
         showingAddOns = false
         activeField = nil
         pickupSearch.unlock()
@@ -241,9 +233,7 @@ struct CustomerHomeView: View {
                         size: category.size,
                         sameHour: sameHour,
                         stairsFloors: stairsFloors,
-                        twoManCrew: twoManCrew,
-                        assembly: assembly,
-                        applianceHookup: applianceHookup
+                        twoManCrew: twoManCrew
                     )
                 }
             }
@@ -266,9 +256,7 @@ struct CustomerHomeView: View {
                         surcharges: PricingService.Surcharges(
                             sameHour: false,
                             stairsFloors: stairsFloors,
-                            twoManCrew: twoManCrew,
-                            assembly: assembly,
-                            applianceHookup: applianceHookup
+                            twoManCrew: twoManCrew
                         )
                     )
                     ScheduleService.shared.schedule(
@@ -295,9 +283,7 @@ struct CustomerHomeView: View {
                     surcharges: PricingService.Surcharges(
                         sameHour: req.sameHour,
                         stairsFloors: req.stairsFloors,
-                        twoManCrew: req.twoManCrew,
-                        assembly: req.assembly,
-                        applianceHookup: req.applianceHookup
+                        twoManCrew: req.twoManCrew
                     )
                 )
                 DeliveryRouteView(
@@ -388,24 +374,6 @@ struct CustomerHomeView: View {
                         .font(.subheadline)
                     }
                     .accessibilityIdentifier("twoManCrewToggle")
-
-                    Toggle(isOn: $assembly) {
-                        Label(
-                            "Assembly / disassembly (+\(PricingService.Quote.format(PricingService.assemblyCents)))",
-                            systemImage: "wrench.and.screwdriver.fill"
-                        )
-                        .font(.subheadline)
-                    }
-                    .accessibilityIdentifier("assemblyToggle")
-
-                    Toggle(isOn: $applianceHookup) {
-                        Label(
-                            "Appliance hookup (+\(PricingService.Quote.format(PricingService.applianceHookupCents)))",
-                            systemImage: "powerplug.fill"
-                        )
-                        .font(.subheadline)
-                    }
-                    .accessibilityIdentifier("applianceHookupToggle")
                 }
                 .padding(.horizontal, 12).padding(.bottom, 10)
             }
@@ -417,8 +385,6 @@ struct CustomerHomeView: View {
         var count = 0
         if stairsFloors > 0 { count += 1 }
         if twoManCrew { count += 1 }
-        if assembly { count += 1 }
-        if applianceHookup { count += 1 }
         return count
     }
 
@@ -440,12 +406,6 @@ struct CustomerHomeView: View {
             }
             if quote.twoManCrewCents > 0 {
                 breakdownRow("Two-man crew", "+\(PricingService.Quote.format(quote.twoManCrewCents))")
-            }
-            if quote.assemblyCents > 0 {
-                breakdownRow("Assembly", "+\(PricingService.Quote.format(quote.assemblyCents))")
-            }
-            if quote.applianceHookupCents > 0 {
-                breakdownRow("Appliance hookup", "+\(PricingService.Quote.format(quote.applianceHookupCents))")
             }
             Divider().padding(.vertical, 2)
             HStack {

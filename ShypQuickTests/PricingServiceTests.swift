@@ -25,8 +25,6 @@ final class PricingServiceTests: XCTestCase {
         XCTAssertEqual(PricingService.sameHourSurchargeCents, 5_000, "Rush should be $50")
         XCTAssertEqual(PricingService.stairsPerFloorCents,    2_500, "Stairs should be $25/floor")
         XCTAssertEqual(PricingService.twoManCrewCents,        7_500, "Crew should be $75")
-        XCTAssertEqual(PricingService.assemblyCents,          5_000, "Assembly should be $50")
-        XCTAssertEqual(PricingService.applianceHookupCents,   4_000, "Hookup should be $40")
         XCTAssertEqual(PricingService.perMileCents,             350, "Mileage should be $3.50/mi")
     }
 
@@ -80,22 +78,20 @@ final class PricingServiceTests: XCTestCase {
             pickup: nearPickup, dropoff: nearDropoff,
             sameHour: true,
             stairsFloors: 2,
-            twoManCrew: true,
-            assembly: true,
-            applianceHookup: true
+            twoManCrew: true
         )
-        // base 12_500 + rush 5_000 + stairs 5_000 + crew 7_500 + assembly 5_000 + hookup 4_000
-        XCTAssertEqual(q.totalCents, 12_500 + 5_000 + 5_000 + 7_500 + 5_000 + 4_000)
+        // base 12_500 + rush 5_000 + stairs 5_000 + crew 7_500
+        XCTAssertEqual(q.totalCents, 12_500 + 5_000 + 5_000 + 7_500)
     }
 
     func testQuoteFromSurchargesStructMatchesExplicitArgs() {
         let s = PricingService.Surcharges(
-            sameHour: true, stairsFloors: 1, twoManCrew: true, assembly: false, applianceHookup: true
+            sameHour: true, stairsFloors: 1, twoManCrew: true
         )
         let viaStruct = PricingService.quote(size: .large, pickup: nearPickup, dropoff: nearDropoff, surcharges: s)
         let viaArgs = PricingService.quote(
             size: .large, pickup: nearPickup, dropoff: nearDropoff,
-            sameHour: true, stairsFloors: 1, twoManCrew: true, assembly: false, applianceHookup: true
+            sameHour: true, stairsFloors: 1, twoManCrew: true
         )
         XCTAssertEqual(viaStruct, viaArgs)
     }

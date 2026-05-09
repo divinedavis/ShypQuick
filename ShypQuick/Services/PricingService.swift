@@ -21,8 +21,6 @@ enum PricingService {
     static let sameHourSurchargeCents = 5_000   // $50  (rush, mid of $30–$75)
     static let stairsPerFloorCents    = 2_500   // $25 / floor
     static let twoManCrewCents        = 7_500   // $75  (mid of $50–$100)
-    static let assemblyCents          = 5_000   // $50
-    static let applianceHookupCents   = 4_000   // $40
 
     // MARK: - Driver compensation
     // PDF: 60–70% to driver. Top of range during expansion for retention.
@@ -33,13 +31,11 @@ enum PricingService {
         var sameHour: Bool = false
         var stairsFloors: Int = 0
         var twoManCrew: Bool = false
-        var assembly: Bool = false
-        var applianceHookup: Bool = false
 
         static let none = Surcharges()
 
         var hasAny: Bool {
-            sameHour || stairsFloors > 0 || twoManCrew || assembly || applianceHookup
+            sameHour || stairsFloors > 0 || twoManCrew
         }
     }
 
@@ -50,8 +46,6 @@ enum PricingService {
         let sameHourSurchargeCents: Int
         let stairsCents: Int
         let twoManCrewCents: Int
-        let assemblyCents: Int
-        let applianceHookupCents: Int
         let totalCents: Int
         let distanceMeters: Double
         let distanceMiles: Double
@@ -78,9 +72,7 @@ enum PricingService {
         dropoff: CLLocationCoordinate2D,
         sameHour: Bool,
         stairsFloors: Int = 0,
-        twoManCrew: Bool = false,
-        assembly: Bool = false,
-        applianceHookup: Bool = false
+        twoManCrew: Bool = false
     ) -> Quote {
         let rawDistance = CLLocation(latitude: pickup.latitude, longitude: pickup.longitude)
             .distance(from: CLLocation(latitude: dropoff.latitude, longitude: dropoff.longitude))
@@ -99,10 +91,8 @@ enum PricingService {
         let rush   = sameHour ? sameHourSurchargeCents : 0
         let stairs = max(0, stairsFloors) * stairsPerFloorCents
         let crew   = twoManCrew ? twoManCrewCents : 0
-        let asm    = assembly ? assemblyCents : 0
-        let hookup = applianceHookup ? applianceHookupCents : 0
 
-        let total = base + mileageSurcharge + rush + stairs + crew + asm + hookup
+        let total = base + mileageSurcharge + rush + stairs + crew
 
         return Quote(
             baseCents: base,
@@ -110,8 +100,6 @@ enum PricingService {
             sameHourSurchargeCents: rush,
             stairsCents: stairs,
             twoManCrewCents: crew,
-            assemblyCents: asm,
-            applianceHookupCents: hookup,
             totalCents: total,
             distanceMeters: distance,
             distanceMiles: miles
@@ -130,9 +118,7 @@ enum PricingService {
             dropoff: dropoff,
             sameHour: surcharges.sameHour,
             stairsFloors: surcharges.stairsFloors,
-            twoManCrew: surcharges.twoManCrew,
-            assembly: surcharges.assembly,
-            applianceHookup: surcharges.applianceHookup
+            twoManCrew: surcharges.twoManCrew
         )
     }
 }
