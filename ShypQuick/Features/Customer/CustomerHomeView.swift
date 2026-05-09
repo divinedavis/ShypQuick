@@ -343,7 +343,6 @@ struct CustomerHomeView: View {
                 HStack {
                     Label("Add-ons", systemImage: "plus.circle.fill")
                         .font(.subheadline.bold())
-                        .accessibilityIdentifier("addOnsToggle")
                     if currentSurcharges.hasAny {
                         Text("\(addOnsCount) selected")
                             .font(.caption2.bold())
@@ -355,10 +354,12 @@ struct CustomerHomeView: View {
                         .font(.caption.bold())
                         .foregroundStyle(.secondary)
                 }
+                .frame(maxWidth: .infinity, minHeight: 44)
                 .contentShape(Rectangle())
-                .padding(.horizontal, 12).padding(.vertical, 10)
+                .padding(.horizontal, 12)
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("addOnsToggle")
 
             if showingAddOns {
                 VStack(spacing: 10) {
