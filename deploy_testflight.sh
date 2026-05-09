@@ -91,6 +91,22 @@ xcodebuild archive \
 echo "✅ Archive created: $ARCHIVE_PATH"
 
 # ── 3. Export & Upload ────────────────────────────────
+# Snapshot the set of existing build IDs BEFORE we upload so the
+# polling step in §5 can pick the build that didn't exist yet — a
+# version-number filter alone is unreliable because ASC silently bumps
+# on conflict, and a "newest in last 30 min" filter can grab a build
+# that was already finished while ours is still PROCESSING.
+JWT=$(generate_jwt)
+PRE_UPLOAD_BUILD_IDS=$(curl -s "https://api.appstoreconnect.apple.com/v1/builds?filter%5Bapp%5D=$APP_ID&fields%5Bbuilds%5D=version&limit=20" \
+  -H "Authorization: Bearer $JWT" 2>/dev/null | python3 -c "
+import sys, json
+try:
+    d = json.load(sys.stdin)
+    print(','.join(b['id'] for b in d.get('data', [])))
+except Exception:
+    pass
+" 2>/dev/null || echo "")
+
 echo "📤 Exporting & uploading..."
 xcodebuild -exportArchive \
   -archivePath "$ARCHIVE_PATH" \
@@ -118,31 +134,27 @@ sleep 30  # Initial wait for build to appear
 
 JWT=$(generate_jwt)
 
-# Find the build we just uploaded by picking the newest VALID build for
-# this app within the last 30 minutes. Filtering by version is unreliable
-# because ASC will silently bump our version on conflict (e.g. when a
-# previous deploy's bookkeeping desync'd from what xcodebuild actually
-# stamped into the .ipa) and return the older record under that number.
+# Find the build we just uploaded by diffing the current build list
+# against the pre-upload snapshot taken in §3. Whatever build ID is in
+# the new list but not the old one is ours, regardless of which version
+# number ASC assigned. Once we have an ID, wait until it's VALID.
 # `|| echo ""` keeps the pipe from killing the script under `set -euo
 # pipefail` when curl or python returns unparseable data.
 for attempt in $(seq 1 20); do
-  BUILD_ID=$(curl -s "https://api.appstoreconnect.apple.com/v1/builds?filter%5Bapp%5D=$APP_ID&fields%5Bbuilds%5D=version,processingState,uploadedDate&limit=10" \
-    -H "Authorization: Bearer $JWT" 2>/dev/null | python3 -c "
-import sys, json
-from datetime import datetime, timedelta, timezone
+  BUILD_ID=$(curl -s "https://api.appstoreconnect.apple.com/v1/builds?filter%5Bapp%5D=$APP_ID&fields%5Bbuilds%5D=version,processingState,uploadedDate&limit=20" \
+    -H "Authorization: Bearer $JWT" 2>/dev/null | PRE_IDS="$PRE_UPLOAD_BUILD_IDS" python3 -c "
+import sys, os, json
 try:
+    pre = set(filter(None, os.environ.get('PRE_IDS', '').split(',')))
     d = json.load(sys.stdin)
     builds = d.get('data', [])
-    cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
-    fresh = [
-        b for b in builds
-        if b['attributes'].get('processingState') == 'VALID'
-        and datetime.fromisoformat(b['attributes']['uploadedDate'].replace('Z', '+00:00')) > cutoff
-    ]
-    fresh.sort(key=lambda b: b['attributes']['uploadedDate'], reverse=True)
-    if fresh:
-        print(fresh[0]['id'])
-        print(fresh[0]['attributes']['version'], file=sys.stderr)
+    new = [b for b in builds if b['id'] not in pre]
+    new.sort(key=lambda b: b['attributes'].get('uploadedDate', ''), reverse=True)
+    for b in new:
+        if b['attributes'].get('processingState') == 'VALID':
+            print(b['id'])
+            print(b['attributes']['version'], file=sys.stderr)
+            break
 except Exception:
     pass
 " 2>/tmp/shypquick-build-version || echo "")
