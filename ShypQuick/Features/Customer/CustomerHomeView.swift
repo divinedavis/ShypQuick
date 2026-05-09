@@ -13,7 +13,6 @@ struct CustomerHomeView: View {
     @State private var dropoffAddress = ""
     @State private var pickupCoord: CLLocationCoordinate2D?
     @State private var dropoffCoord: CLLocationCoordinate2D?
-    @State private var didPrefillHome = false
     @State private var itemSize: ItemSize = .small
     @State private var selectedCategory: ItemCategory?
     @State private var attachedPhotoData: Data?
@@ -104,21 +103,6 @@ struct CustomerHomeView: View {
         dropoffSearch.unlock()
         pickupSearch.updateQuery("")
         dropoffSearch.updateQuery("")
-        didPrefillHome = false
-        prefillHomeAddressIfNeeded()
-    }
-
-    private func prefillHomeAddressIfNeeded() {
-        guard !didPrefillHome,
-              pickupAddress.isEmpty,
-              let home = profile.homeAddress,
-              let lat = profile.homeLat,
-              let lng = profile.homeLng else { return }
-        didPrefillHome = true
-        pickupSearch.lockAfterSelection()
-        suppressNextEdit = .pickup
-        pickupAddress = home
-        pickupCoord = CLLocationCoordinate2D(latitude: lat, longitude: lng)
     }
 
     private func dismissKeyboard() {
@@ -297,7 +281,6 @@ struct CustomerHomeView: View {
             .task {
                 location.requestPermission()
                 location.startUpdating()
-                prefillHomeAddressIfNeeded()
             }
             .onChange(of: routeRequest) { oldValue, newValue in
                 // When the user returns from the route view (newValue == nil),
