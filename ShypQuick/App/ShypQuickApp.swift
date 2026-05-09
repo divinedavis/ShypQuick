@@ -11,6 +11,12 @@ struct ShypQuickApp: App {
             RootView()
                 .environmentObject(session)
                 .task {
+                    if uiTestModeEnabled {
+                        #if DEBUG
+                        session.signInForUITest()
+                        #endif
+                        return
+                    }
                     let usedAutoLogin = await autoLoginIfRequested()
                     if !usedAutoLogin {
                         await session.bootstrap()
@@ -18,6 +24,16 @@ struct ShypQuickApp: App {
                     }
                 }
         }
+    }
+
+    /// `-SHYP_UI_TEST 1` launch arg flips the app into a deterministic
+    /// signed-in state for XCUITest runs. Debug + simulator only.
+    private var uiTestModeEnabled: Bool {
+        #if DEBUG && targetEnvironment(simulator)
+        return UserDefaults.standard.bool(forKey: "SHYP_UI_TEST")
+        #else
+        return false
+        #endif
     }
 
     /// Simulator-only shortcut: launch with

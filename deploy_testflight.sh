@@ -44,6 +44,13 @@ if [ -n "$DIRTY" ]; then
   exit 1
 fi
 
+# ── 0. Run the full test sweep ────────────────────────
+# Unit tests (XCTest) + Swift Testing + performance + XCUITest must all
+# pass before we ship. Failed tests = no TestFlight upload.
+echo "🧪 Running full test sweep..."
+"$PROJECT_DIR/scripts/run_tests.sh" all
+echo "✅ All tests passed"
+
 # ── 1. Increment build number ─────────────────────────
 CURRENT_BUILD=$(grep -m1 'CURRENT_PROJECT_VERSION' "$PBXPROJ" | sed 's/.*= //;s/;//')
 NEW_BUILD=$((CURRENT_BUILD + 1))

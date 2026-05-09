@@ -79,7 +79,7 @@ struct ScheduledJobsView: View {
                 Image(systemName: delivery.categoryIcon).foregroundStyle(.tint)
                 Text(delivery.categoryTitle).font(.headline)
                 Spacer()
-                let driverCents = Int(Double(delivery.totalCents) * 0.70)
+                let driverCents = Int(Double(delivery.totalCents) * PricingService.driverShare)
                 Text("Earn \(PricingService.Quote.format(driverCents))")
                     .font(.subheadline.bold())
                     .foregroundStyle(.green)

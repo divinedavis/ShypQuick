@@ -18,6 +18,11 @@ struct CustomerHomeView: View {
     @State private var selectedCategory: ItemCategory?
     @State private var attachedPhotoData: Data?
     @State private var sameHour = false
+    @State private var stairsFloors = 0
+    @State private var twoManCrew = false
+    @State private var assembly = false
+    @State private var applianceHookup = false
+    @State private var showingAddOns = false
     @State private var routeRequest: RouteRequest?
     @State private var showingCategorySheet = false
     @State private var showingScheduleSheet = false
@@ -41,6 +46,10 @@ struct CustomerHomeView: View {
         let dropoffLng: Double
         let size: ItemSize
         let sameHour: Bool
+        let stairsFloors: Int
+        let twoManCrew: Bool
+        let assembly: Bool
+        let applianceHookup: Bool
     }
 
     @State private var cameraPosition: MapCameraPosition = .region(
@@ -52,9 +61,24 @@ struct CustomerHomeView: View {
 
     enum Field: Hashable { case pickup, dropoff }
 
+    private var currentSurcharges: PricingService.Surcharges {
+        PricingService.Surcharges(
+            sameHour: sameHour,
+            stairsFloors: stairsFloors,
+            twoManCrew: twoManCrew,
+            assembly: assembly,
+            applianceHookup: applianceHookup
+        )
+    }
+
     private var currentQuote: PricingService.Quote? {
         guard let pickup = pickupCoord, let dropoff = dropoffCoord else { return nil }
-        return PricingService.quote(size: itemSize, pickup: pickup, dropoff: dropoff, sameHour: sameHour)
+        return PricingService.quote(
+            size: itemSize,
+            pickup: pickup,
+            dropoff: dropoff,
+            surcharges: currentSurcharges
+        )
     }
 
     private var canSubmit: Bool {
@@ -78,6 +102,11 @@ struct CustomerHomeView: View {
         selectedCategory = nil
         itemSize = .small
         sameHour = false
+        stairsFloors = 0
+        twoManCrew = false
+        assembly = false
+        applianceHookup = false
+        showingAddOns = false
         activeField = nil
         pickupSearch.unlock()
         dropoffSearch.unlock()
@@ -134,21 +163,22 @@ struct CustomerHomeView: View {
                     }
 
                     Toggle(isOn: $sameHour) {
-                        Label("Need it within the hour (+$30)", systemImage: "bolt.fill")
-                            .font(.subheadline)
+                        Label(
+                            "Need it within the hour (+\(PricingService.Quote.format(PricingService.sameHourSurchargeCents)))",
+                            systemImage: "bolt.fill"
+                        )
+                        .font(.subheadline)
                     }
                     .tint(.orange)
+                    .accessibilityIdentifier("rushToggle")
                     .padding(.horizontal, 12)
                     .padding(.vertical, 8)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
 
+                    addOnsCard
+
                     if let quote = currentQuote {
-                        HStack {
-                            Text("Estimate").font(.subheadline).foregroundStyle(.secondary)
-                            Spacer()
-                            Text(quote.dollars).font(.title3.bold())
-                        }
-                        .padding(.horizontal, 12)
+                        quoteBreakdown(quote)
                     }
 
                     HStack(spacing: 12) {
@@ -185,7 +215,11 @@ struct CustomerHomeView: View {
                     itemSize = category.size
                     attachedPhotoData = photoData
                     guard let p = pickupCoord, let d = dropoffCoord else { return }
-                    let quote = PricingService.quote(size: category.size, pickup: p, dropoff: d, sameHour: sameHour)
+                    let quote = PricingService.quote(
+                        size: category.size,
+                        pickup: p, dropoff: d,
+                        surcharges: currentSurcharges
+                    )
                     DispatchService.shared.postOffer(
                         pickupAddress: pickupAddress,
                         dropoffAddress: dropoffAddress,
@@ -204,7 +238,12 @@ struct CustomerHomeView: View {
                         dropoffAddress: dropoffAddress,
                         pickupLat: p.latitude, pickupLng: p.longitude,
                         dropoffLat: d.latitude, dropoffLng: d.longitude,
-                        size: category.size, sameHour: sameHour
+                        size: category.size,
+                        sameHour: sameHour,
+                        stairsFloors: stairsFloors,
+                        twoManCrew: twoManCrew,
+                        assembly: assembly,
+                        applianceHookup: applianceHookup
                     )
                 }
             }
@@ -221,7 +260,17 @@ struct CustomerHomeView: View {
                 SchedulePickerSheet { date in
                     guard let p = pickupCoord, let d = dropoffCoord,
                           let cat = selectedCategory else { return }
-                    let quote = PricingService.quote(size: cat.size, pickup: p, dropoff: d, sameHour: false)
+                    let quote = PricingService.quote(
+                        size: cat.size,
+                        pickup: p, dropoff: d,
+                        surcharges: PricingService.Surcharges(
+                            sameHour: false,
+                            stairsFloors: stairsFloors,
+                            twoManCrew: twoManCrew,
+                            assembly: assembly,
+                            applianceHookup: applianceHookup
+                        )
+                    )
                     ScheduleService.shared.schedule(
                         pickupAddress: pickupAddress,
                         dropoffAddress: dropoffAddress,
@@ -240,7 +289,17 @@ struct CustomerHomeView: View {
             .navigationDestination(item: $routeRequest) { req in
                 let pickup = CLLocationCoordinate2D(latitude: req.pickupLat, longitude: req.pickupLng)
                 let dropoff = CLLocationCoordinate2D(latitude: req.dropoffLat, longitude: req.dropoffLng)
-                let quote = PricingService.quote(size: req.size, pickup: pickup, dropoff: dropoff, sameHour: req.sameHour)
+                let quote = PricingService.quote(
+                    size: req.size,
+                    pickup: pickup, dropoff: dropoff,
+                    surcharges: PricingService.Surcharges(
+                        sameHour: req.sameHour,
+                        stairsFloors: req.stairsFloors,
+                        twoManCrew: req.twoManCrew,
+                        assembly: req.assembly,
+                        applianceHookup: req.applianceHookup
+                    )
+                )
                 DeliveryRouteView(
                     pickupAddress: req.pickupAddress,
                     dropoffAddress: req.dropoffAddress,
@@ -272,6 +331,137 @@ struct CustomerHomeView: View {
                     )
                 )
             }
+        }
+    }
+
+    @ViewBuilder
+    private var addOnsCard: some View {
+        VStack(spacing: 0) {
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { showingAddOns.toggle() }
+            } label: {
+                HStack {
+                    Label("Add-ons", systemImage: "plus.circle.fill")
+                        .font(.subheadline.bold())
+                        .accessibilityIdentifier("addOnsToggle")
+                    if currentSurcharges.hasAny {
+                        Text("\(addOnsCount) selected")
+                            .font(.caption2.bold())
+                            .padding(.horizontal, 6).padding(.vertical, 2)
+                            .background(Color.accentColor.opacity(0.18), in: Capsule())
+                    }
+                    Spacer()
+                    Image(systemName: showingAddOns ? "chevron.up" : "chevron.down")
+                        .font(.caption.bold())
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(Rectangle())
+                .padding(.horizontal, 12).padding(.vertical, 10)
+            }
+            .buttonStyle(.plain)
+
+            if showingAddOns {
+                VStack(spacing: 10) {
+                    HStack {
+                        Label("Stairs", systemImage: "stairs")
+                            .font(.subheadline)
+                        Spacer()
+                        Stepper(
+                            "\(stairsFloors) floor\(stairsFloors == 1 ? "" : "s")",
+                            value: $stairsFloors, in: 0...20
+                        )
+                        .labelsHidden()
+                        Text("\(stairsFloors) fl")
+                            .font(.caption.monospacedDigit())
+                            .frame(width: 40, alignment: .trailing)
+                        Text("+\(PricingService.Quote.format(PricingService.stairsPerFloorCents))/fl")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Toggle(isOn: $twoManCrew) {
+                        Label(
+                            "Two-man crew (+\(PricingService.Quote.format(PricingService.twoManCrewCents)))",
+                            systemImage: "person.2.fill"
+                        )
+                        .font(.subheadline)
+                    }
+                    .accessibilityIdentifier("twoManCrewToggle")
+
+                    Toggle(isOn: $assembly) {
+                        Label(
+                            "Assembly / disassembly (+\(PricingService.Quote.format(PricingService.assemblyCents)))",
+                            systemImage: "wrench.and.screwdriver.fill"
+                        )
+                        .font(.subheadline)
+                    }
+                    .accessibilityIdentifier("assemblyToggle")
+
+                    Toggle(isOn: $applianceHookup) {
+                        Label(
+                            "Appliance hookup (+\(PricingService.Quote.format(PricingService.applianceHookupCents)))",
+                            systemImage: "powerplug.fill"
+                        )
+                        .font(.subheadline)
+                    }
+                    .accessibilityIdentifier("applianceHookupToggle")
+                }
+                .padding(.horizontal, 12).padding(.bottom, 10)
+            }
+        }
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private var addOnsCount: Int {
+        var count = 0
+        if stairsFloors > 0 { count += 1 }
+        if twoManCrew { count += 1 }
+        if assembly { count += 1 }
+        if applianceHookup { count += 1 }
+        return count
+    }
+
+    @ViewBuilder
+    private func quoteBreakdown(_ quote: PricingService.Quote) -> some View {
+        VStack(spacing: 4) {
+            breakdownRow("Base", PricingService.Quote.format(quote.baseCents))
+            if quote.mileageSurchargeCents > 0 {
+                breakdownRow(
+                    String(format: "Mileage (%.1f mi)", max(0, quote.distanceMiles - PricingService.freeMilesRadius)),
+                    "+\(PricingService.Quote.format(quote.mileageSurchargeCents))"
+                )
+            }
+            if quote.sameHourSurchargeCents > 0 {
+                breakdownRow("Rush (within hour)", "+\(PricingService.Quote.format(quote.sameHourSurchargeCents))")
+            }
+            if quote.stairsCents > 0 {
+                breakdownRow("Stairs (\(stairsFloors) fl)", "+\(PricingService.Quote.format(quote.stairsCents))")
+            }
+            if quote.twoManCrewCents > 0 {
+                breakdownRow("Two-man crew", "+\(PricingService.Quote.format(quote.twoManCrewCents))")
+            }
+            if quote.assemblyCents > 0 {
+                breakdownRow("Assembly", "+\(PricingService.Quote.format(quote.assemblyCents))")
+            }
+            if quote.applianceHookupCents > 0 {
+                breakdownRow("Appliance hookup", "+\(PricingService.Quote.format(quote.applianceHookupCents))")
+            }
+            Divider().padding(.vertical, 2)
+            HStack {
+                Text("Estimate").font(.subheadline).foregroundStyle(.secondary)
+                Spacer()
+                Text(quote.dollars).font(.title3.bold())
+            }
+        }
+        .padding(.horizontal, 12).padding(.vertical, 8)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+    }
+
+    private func breakdownRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label).font(.caption).foregroundStyle(.secondary)
+            Spacer()
+            Text(value).font(.caption.monospacedDigit())
         }
     }
 

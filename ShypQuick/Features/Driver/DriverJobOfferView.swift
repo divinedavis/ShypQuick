@@ -13,7 +13,7 @@ struct DriverJobOfferView: View {
     @State private var photoURL: URL?
 
     private var driverEarningsCents: Int {
-        Int(Double(offer.totalCents) * 0.70)
+        Int(Double(offer.totalCents) * PricingService.driverShare)
     }
 
     private var distanceToPickupMiles: Double? {

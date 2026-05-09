@@ -56,7 +56,7 @@ struct HistoryView: View {
                                 Text(job.categoryTitle).font(.headline)
                                 Spacer()
                                 if isDriver {
-                                    let earnings = Int(Double(job.totalCents) * 0.70)
+                                    let earnings = Int(Double(job.totalCents) * PricingService.driverShare)
                                     Text(PricingService.Quote.format(earnings))
                                         .font(.subheadline.bold())
                                         .foregroundStyle(.green)

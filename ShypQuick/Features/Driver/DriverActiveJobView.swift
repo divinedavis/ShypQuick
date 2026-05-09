@@ -30,10 +30,12 @@ struct DriverActiveJobView: View {
     private var job: JobOffer { dispatch.activeJob ?? initialJob }
 
     private var driverEarningsCents: Int {
-        Int(Double(job.totalCents) * 0.70)
+        Int(Double(job.totalCents) * PricingService.driverShare)
     }
 
-    private var truckUpgradeDifferenceCents: Int { 15_000 - 4_000 }
+    private var truckUpgradeDifferenceCents: Int {
+        PricingService.largeBaseCents - PricingService.smallBaseCents
+    }
 
     /// Open Apple Maps with driving directions to the given coordinate.
     /// Source is omitted so Maps uses the device's current location.

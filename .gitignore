@@ -2,6 +2,15 @@
 build/
 DerivedData/
 *.xcuserstate
+
+# Stale top-level scaffolding duplicates (canonical source lives under ShypQuick/)
+/App/
+/Models/
+/Resources/
+/Services/
+
+# Claude worktrees + agent artifacts
+.claude/
 *.xcuserdatad/
 xcuserdata/
 *.xcworkspace/xcuserdata/

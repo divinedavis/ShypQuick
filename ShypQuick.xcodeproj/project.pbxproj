@@ -15,12 +15,26 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		9E78B299BC84F4D7C8576ED8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 163E46A02F8EBEE000040733 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 163E46A72F8EBEE000040733;
+			remoteInfo = ShypQuick;
+		};
 		A57C1DC3B1E6539B0B518B06 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 163E46A02F8EBEE000040733 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = A3C28009DB9700EFFEA402CB;
 			remoteInfo = ShypQuickLiveActivity;
+		};
+		F8DB40D45C6A46F94BECF854 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 163E46A02F8EBEE000040733 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 163E46A72F8EBEE000040733;
+			remoteInfo = ShypQuick;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -42,6 +56,8 @@
 		163E46A82F8EBEE000040733 /* ShypQuick.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ShypQuick.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		24BEC5E4973974A29FB54FAD /* ShypQuickLiveActivity.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; name = ShypQuickLiveActivity.appex; path = ShypQuickLiveActivity.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		296150AB0C4BF2C7ADEE5814 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		39E3BC84840F9C3DB4ECA9D8 /* ShypQuickUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShypQuickUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		489C68C4AB1B3DBEE43C5FDF /* ShypQuickTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ShypQuickTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		614F975CEF976BDBBCC22D60 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10C8FBA5EADAD336C6E9754 /* ShypQuickLiveActivityBundle.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShypQuickLiveActivityBundle.swift; sourceTree = "<group>"; };
 		B8E8989E21F87DBF2B8198EF /* ShypQuickLiveActivityWidget.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ShypQuickLiveActivityWidget.swift; sourceTree = "<group>"; };
@@ -53,6 +69,20 @@
 			exceptions = (
 			);
 			path = ShypQuick;
+			sourceTree = "<group>";
+		};
+		3FEA7BDD62CACD4B74CE0319 /* ShypQuickTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			path = ShypQuickTests;
+			sourceTree = "<group>";
+		};
+		7CF2AFBCD3AF3AF66CBA2480 /* ShypQuickUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+			);
+			path = ShypQuickUITests;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -71,6 +101,20 @@
 			buildActionMask = 2147483647;
 			files = (
 				4EB7915EA17619DDD9D9CF40 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B6909D42FFFE34D532E646EF /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D2432B3D3A32FCE33D6BD6C2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -95,6 +139,8 @@
 				163E46A92F8EBEE000040733 /* Products */,
 				5DE2A4AC5DF515818FF48AA0 /* Frameworks */,
 				145E3A25F98CB7D49119C1B4 /* ShypQuickLiveActivity */,
+				3FEA7BDD62CACD4B74CE0319 /* ShypQuickTests */,
+				7CF2AFBCD3AF3AF66CBA2480 /* ShypQuickUITests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -103,6 +149,8 @@
 			children = (
 				163E46A82F8EBEE000040733 /* ShypQuick.app */,
 				24BEC5E4973974A29FB54FAD /* ShypQuickLiveActivity.appex */,
+				489C68C4AB1B3DBEE43C5FDF /* ShypQuickTests.xctest */,
+				39E3BC84840F9C3DB4ECA9D8 /* ShypQuickUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -151,6 +199,27 @@
 			productReference = 163E46A82F8EBEE000040733 /* ShypQuick.app */;
 			productType = "com.apple.product-type.application";
 		};
+		819FE6AE50F4C52B099E4868 /* ShypQuickUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 7E01FF1DE8579AAA966603C7 /* Build configuration list for PBXNativeTarget "ShypQuickUITests" */;
+			buildPhases = (
+				847E230A41362566636EEF8E /* Sources */,
+				D2432B3D3A32FCE33D6BD6C2 /* Frameworks */,
+				556F2E1D878E7FEE5BCFD84F /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				7BE2D0BFE6055B2E2DFFE272 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				7CF2AFBCD3AF3AF66CBA2480 /* ShypQuickUITests */,
+			);
+			name = ShypQuickUITests;
+			productName = ShypQuickUITests;
+			productReference = 39E3BC84840F9C3DB4ECA9D8 /* ShypQuickUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
 		A3C28009DB9700EFFEA402CB /* ShypQuickLiveActivity */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 69C5F4D4D0F62FCDD75C460F /* Build configuration list for PBXNativeTarget "ShypQuickLiveActivity" */;
@@ -167,6 +236,27 @@
 			productName = ShypQuickLiveActivity;
 			productReference = 24BEC5E4973974A29FB54FAD /* ShypQuickLiveActivity.appex */;
 			productType = "com.apple.product-type.app-extension";
+		};
+		AF72C10F0015D6FC2050EF11 /* ShypQuickTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 987A53D9A3A570CE9A4AAA12 /* Build configuration list for PBXNativeTarget "ShypQuickTests" */;
+			buildPhases = (
+				500554D07A3E2B1CB8865F9F /* Sources */,
+				B6909D42FFFE34D532E646EF /* Frameworks */,
+				615E013D217310D904640FDF /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				867CC6EDFFFBAA8CFCB86558 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				3FEA7BDD62CACD4B74CE0319 /* ShypQuickTests */,
+			);
+			name = ShypQuickTests;
+			productName = ShypQuickTests;
+			productReference = 489C68C4AB1B3DBEE43C5FDF /* ShypQuickTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -202,12 +292,28 @@
 			targets = (
 				163E46A72F8EBEE000040733 /* ShypQuick */,
 				A3C28009DB9700EFFEA402CB /* ShypQuickLiveActivity */,
+				AF72C10F0015D6FC2050EF11 /* ShypQuickTests */,
+				819FE6AE50F4C52B099E4868 /* ShypQuickUITests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		163E46A62F8EBEE000040733 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		556F2E1D878E7FEE5BCFD84F /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		615E013D217310D904640FDF /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -225,6 +331,20 @@
 
 /* Begin PBXSourcesBuildPhase section */
 		163E46A42F8EBEE000040733 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		500554D07A3E2B1CB8865F9F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		847E230A41362566636EEF8E /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -249,9 +369,47 @@
 			target = A3C28009DB9700EFFEA402CB /* ShypQuickLiveActivity */;
 			targetProxy = A57C1DC3B1E6539B0B518B06 /* PBXContainerItemProxy */;
 		};
+		7BE2D0BFE6055B2E2DFFE272 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = ShypQuick;
+			target = 163E46A72F8EBEE000040733 /* ShypQuick */;
+			targetProxy = 9E78B299BC84F4D7C8576ED8 /* PBXContainerItemProxy */;
+		};
+		867CC6EDFFFBAA8CFCB86558 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = ShypQuick;
+			target = 163E46A72F8EBEE000040733 /* ShypQuick */;
+			targetProxy = F8DB40D45C6A46F94BECF854 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		122F2338BA58D9C4EC5580A8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CG89RY4W6R;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Dev.Shyp-Quick.Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ShypQuick.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ShypQuick";
+			};
+			name = Debug;
+		};
 		163E46B12F8EBEE100040733 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -447,6 +605,31 @@
 			};
 			name = Release;
 		};
+		6D3AF2636FD887F632D450FB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CG89RY4W6R;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Dev.Shyp-Quick.UITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ShypQuick;
+			};
+			name = Release;
+		};
 		955501919AF81046728BDE17 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -474,6 +657,57 @@
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
+		};
+		9CED2D821D3B583863D97AD9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CG89RY4W6R;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Dev.Shyp-Quick.UITests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = ShypQuick;
+			};
+			name = Debug;
+		};
+		E4562649F9BD221384054810 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = NO;
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGNING_ALLOWED = YES;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = CG89RY4W6R;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.Dev.Shyp-Quick.Tests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ShypQuick.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/ShypQuick";
+			};
+			name = Release;
 		};
 		F4E9914A0C2F9D5CC97326C4 /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -530,6 +764,24 @@
 			buildConfigurations = (
 				F4E9914A0C2F9D5CC97326C4 /* Release */,
 				955501919AF81046728BDE17 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		7E01FF1DE8579AAA966603C7 /* Build configuration list for PBXNativeTarget "ShypQuickUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9CED2D821D3B583863D97AD9 /* Debug */,
+				6D3AF2636FD887F632D450FB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		987A53D9A3A570CE9A4AAA12 /* Build configuration list for PBXNativeTarget "ShypQuickTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				122F2338BA58D9C4EC5580A8 /* Debug */,
+				E4562649F9BD221384054810 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

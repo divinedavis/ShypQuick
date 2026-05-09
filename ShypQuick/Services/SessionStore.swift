@@ -105,6 +105,27 @@ final class SessionStore: ObservableObject {
         state = .signedIn(profile)
     }
 
+    /// Test-only: jump straight to a signed-in customer state without
+    /// hitting Supabase. Compiled out of release builds. Used by the
+    /// XCUITest suite so flow tests don't depend on a network round-trip
+    /// or a live tester account.
+    #if DEBUG
+    func signInForUITest(role: UserRole = .customer) {
+        let profile = Profile(
+            id: UUID(uuidString: "00000000-0000-0000-0000-000000000001")!,
+            fullName: "UI Test",
+            phone: nil,
+            role: role,
+            avatarUrl: nil,
+            rating: nil,
+            homeAddress: nil,
+            homeLat: nil,
+            homeLng: nil
+        )
+        state = .signedIn(profile)
+    }
+    #endif
+
     func signOut() async {
         // Best-effort clear the device's APNs token from our DB so the previous
         // user stops receiving pushes on this device.
