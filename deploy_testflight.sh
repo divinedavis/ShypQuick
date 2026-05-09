@@ -118,24 +118,42 @@ sleep 30  # Initial wait for build to appear
 
 JWT=$(generate_jwt)
 
-# Find the new build by version number. `|| echo ""` keeps the pipe from
-# killing the script under `set -euo pipefail` when curl or python returns
-# something unparseable (transient Apple 5xx, flaky network, etc).
+# Find the build we just uploaded by picking the newest VALID build for
+# this app within the last 30 minutes. Filtering by version is unreliable
+# because ASC will silently bump our version on conflict (e.g. when a
+# previous deploy's bookkeeping desync'd from what xcodebuild actually
+# stamped into the .ipa) and return the older record under that number.
+# `|| echo ""` keeps the pipe from killing the script under `set -euo
+# pipefail` when curl or python returns unparseable data.
 for attempt in $(seq 1 20); do
-  BUILD_ID=$(curl -s "https://api.appstoreconnect.apple.com/v1/builds?filter%5Bapp%5D=$APP_ID&filter%5Bversion%5D=$NEW_BUILD&fields%5Bbuilds%5D=version,processingState" \
+  BUILD_ID=$(curl -s "https://api.appstoreconnect.apple.com/v1/builds?filter%5Bapp%5D=$APP_ID&fields%5Bbuilds%5D=version,processingState,uploadedDate&limit=10" \
     -H "Authorization: Bearer $JWT" 2>/dev/null | python3 -c "
-import sys,json
+import sys, json
+from datetime import datetime, timedelta, timezone
 try:
-    d=json.load(sys.stdin)
-    builds=d.get('data',[])
-    if builds and builds[0]['attributes']['processingState']=='VALID':
-        print(builds[0]['id'])
+    d = json.load(sys.stdin)
+    builds = d.get('data', [])
+    cutoff = datetime.now(timezone.utc) - timedelta(minutes=30)
+    fresh = [
+        b for b in builds
+        if b['attributes'].get('processingState') == 'VALID'
+        and datetime.fromisoformat(b['attributes']['uploadedDate'].replace('Z', '+00:00')) > cutoff
+    ]
+    fresh.sort(key=lambda b: b['attributes']['uploadedDate'], reverse=True)
+    if fresh:
+        print(fresh[0]['id'])
+        print(fresh[0]['attributes']['version'], file=sys.stderr)
 except Exception:
     pass
-" 2>/dev/null || echo "")
+" 2>/tmp/shypquick-build-version || echo "")
 
   if [ -n "$BUILD_ID" ]; then
-    echo "✅ Build processed: $BUILD_ID"
+    ACTUAL_VERSION=$(cat /tmp/shypquick-build-version 2>/dev/null || echo "?")
+    rm -f /tmp/shypquick-build-version
+    if [ "$ACTUAL_VERSION" != "$NEW_BUILD" ] && [ "$ACTUAL_VERSION" != "?" ]; then
+      echo "ℹ️  ASC stamped this upload as build $ACTUAL_VERSION (we asked for $NEW_BUILD)"
+    fi
+    echo "✅ Build processed: $BUILD_ID (build $ACTUAL_VERSION)"
     break
   fi
   echo "   Still processing... (attempt $attempt/20)"
