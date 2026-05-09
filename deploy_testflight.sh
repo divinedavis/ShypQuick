@@ -52,12 +52,24 @@ echo "🧪 Running full test sweep..."
 echo "✅ All tests passed"
 
 # ── 1. Increment build number ─────────────────────────
-CURRENT_BUILD=$(grep -m1 'CURRENT_PROJECT_VERSION' "$PBXPROJ" | sed 's/.*= //;s/;//')
-NEW_BUILD=$((CURRENT_BUILD + 1))
-MARKETING_VERSION=$(grep -m1 'MARKETING_VERSION' "$PBXPROJ" | sed 's/.*= //;s/;//')
-
-echo "📦 Bumping build: $MARKETING_VERSION ($CURRENT_BUILD) → $MARKETING_VERSION ($NEW_BUILD)"
-sed -i '' "s/CURRENT_PROJECT_VERSION = $CURRENT_BUILD;/CURRENT_PROJECT_VERSION = $NEW_BUILD;/g" "$PBXPROJ"
+# Scoped to the app target (and its LiveActivity extension, which Apple
+# requires to share a build number) via Ruby xcodeproj. The previous
+# `grep -m1` approach broke once test targets were added — they have
+# their own CURRENT_PROJECT_VERSION at 1 that grep happily picked up.
+read NEW_BUILD MARKETING_VERSION <<< "$(ruby -r xcodeproj -e "
+proj = Xcodeproj::Project.open('$PROJECT_DIR/$PROJECT')
+app  = proj.targets.find { |t| t.product_type == 'com.apple.product-type.application' }
+ext  = proj.targets.find { |t| t.product_type == 'com.apple.product-type.app-extension' }
+cur  = app.build_configurations.first.build_settings['CURRENT_PROJECT_VERSION'].to_i
+mkt  = app.build_configurations.first.build_settings['MARKETING_VERSION']
+nxt  = cur + 1
+[app, ext].compact.each do |t|
+  t.build_configurations.each { |c| c.build_settings['CURRENT_PROJECT_VERSION'] = nxt.to_s }
+end
+proj.save
+puts \"#{nxt} #{mkt}\"
+")"
+echo "📦 Bumping build to $MARKETING_VERSION ($NEW_BUILD)"
 
 # ── 2. Archive ────────────────────────────────────────
 echo "🔨 Archiving..."
