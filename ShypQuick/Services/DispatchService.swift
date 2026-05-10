@@ -65,6 +65,9 @@ private struct JobOfferInsert: Encodable {
     let category_title: String
     let category_icon: String
     let photo_url: String?
+    let payment_intent_id: String?
+    let authorized_amount_cents: Int?
+    let payment_status: String
 }
 
 private struct JobOfferUpdate: Encodable {
@@ -203,7 +206,8 @@ final class DispatchService: ObservableObject {
         totalCents: Int,
         photoData: Data?,
         categoryTitle: String,
-        categoryIcon: String
+        categoryIcon: String,
+        paymentIntentId: String? = nil
     ) {
         guard !isPosting else { return }
         isPosting = true
@@ -244,7 +248,10 @@ final class DispatchService: ObservableObject {
                     total_cents: totalCents,
                     category_title: categoryTitle,
                     category_icon: categoryIcon,
-                    photo_url: uploadedUrl
+                    photo_url: uploadedUrl,
+                    payment_intent_id: paymentIntentId,
+                    authorized_amount_cents: paymentIntentId == nil ? nil : totalCents,
+                    payment_status: paymentIntentId == nil ? "unauthorized" : "authorized"
                 )
                 try await client
                     .from("job_offers")

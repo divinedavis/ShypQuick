@@ -53,6 +53,8 @@ struct CustomerHomeView: View {
             span: MKCoordinateSpan(latitudeDelta: 0.08, longitudeDelta: 0.08)
         )
     )
+    @State private var paymentError: String?
+    @State private var isProcessingPayment = false
 
     enum Field: Hashable { case pickup, dropoff }
 
@@ -109,6 +111,88 @@ struct CustomerHomeView: View {
         UIApplication.shared.sendAction(
             #selector(UIResponder.resignFirstResponder),
             to: nil, from: nil, for: nil
+        )
+    }
+
+    private func rootViewController() -> UIViewController? {
+        guard let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene }).first else { return nil }
+        let window = scene.windows.first(where: \.isKeyWindow) ?? scene.windows.first
+        var vc = window?.rootViewController
+        while let presented = vc?.presentedViewController { vc = presented }
+        return vc
+    }
+
+    /// Authorize the customer's card via Apple Pay (when configured), then
+    /// post the job offer with the resulting payment_intent_id. If Stripe
+    /// isn't configured yet, falls back to posting the offer with no hold so
+    /// the legacy free flow keeps working.
+    private func processRequest(
+        category: ItemCategory,
+        photoData: Data?,
+        pickup p: CLLocationCoordinate2D,
+        dropoff d: CLLocationCoordinate2D,
+        pickupAddress pickupAddr: String,
+        dropoffAddress dropoffAddr: String,
+        quote: PricingService.Quote,
+        sameHour rush: Bool,
+        stairsFloors floors: Int,
+        twoManCrew crew: Bool
+    ) async {
+        isProcessingPayment = true
+        defer { isProcessingPayment = false }
+
+        // Let the SwiftUI category sheet finish dismissing before we present
+        // a UIKit-backed PaymentSheet from the same window.
+        try? await Task.sleep(nanoseconds: 350_000_000)
+
+        let result: PaymentService.AuthorizeResult
+        if let presenter = rootViewController() {
+            result = await PaymentService.shared.authorize(
+                amountCents: quote.totalCents,
+                presenter: presenter
+            )
+        } else {
+            result = .notConfigured
+        }
+
+        let intentId: String?
+        switch result {
+        case .authorized(let id):
+            intentId = id
+        case .notConfigured:
+            // Stripe not set up yet — preserve the existing free flow.
+            intentId = nil
+        case .cancelled:
+            return
+        case .failed(let msg):
+            paymentError = msg
+            return
+        }
+
+        DispatchService.shared.postOffer(
+            pickupAddress: pickupAddr,
+            dropoffAddress: dropoffAddr,
+            pickup: p,
+            dropoff: d,
+            size: category.size,
+            vehicleType: category.vehicleType,
+            sameHour: rush,
+            totalCents: quote.totalCents,
+            photoData: photoData,
+            categoryTitle: category.title,
+            categoryIcon: category.icon,
+            paymentIntentId: intentId
+        )
+        routeRequest = RouteRequest(
+            pickupAddress: pickupAddr,
+            dropoffAddress: dropoffAddr,
+            pickupLat: p.latitude, pickupLng: p.longitude,
+            dropoffLat: d.latitude, dropoffLng: d.longitude,
+            size: category.size,
+            sameHour: rush,
+            stairsFloors: floors,
+            twoManCrew: crew
         )
     }
 
@@ -196,30 +280,37 @@ struct CustomerHomeView: View {
                         pickup: p, dropoff: d,
                         surcharges: currentSurcharges
                     )
-                    DispatchService.shared.postOffer(
-                        pickupAddress: pickupAddress,
-                        dropoffAddress: dropoffAddress,
-                        pickup: p,
-                        dropoff: d,
-                        size: category.size,
-                        vehicleType: category.vehicleType,
-                        sameHour: sameHour,
-                        totalCents: quote.totalCents,
-                        photoData: photoData,
-                        categoryTitle: category.title,
-                        categoryIcon: category.icon
-                    )
-                    routeRequest = RouteRequest(
-                        pickupAddress: pickupAddress,
-                        dropoffAddress: dropoffAddress,
-                        pickupLat: p.latitude, pickupLng: p.longitude,
-                        dropoffLat: d.latitude, dropoffLng: d.longitude,
-                        size: category.size,
-                        sameHour: sameHour,
-                        stairsFloors: stairsFloors,
-                        twoManCrew: twoManCrew
-                    )
+                    let pickupAddr = pickupAddress
+                    let dropoffAddr = dropoffAddress
+                    let rush = sameHour
+                    let floors = stairsFloors
+                    let crew = twoManCrew
+                    Task { @MainActor in
+                        await processRequest(
+                            category: category,
+                            photoData: photoData,
+                            pickup: p, dropoff: d,
+                            pickupAddress: pickupAddr,
+                            dropoffAddress: dropoffAddr,
+                            quote: quote,
+                            sameHour: rush,
+                            stairsFloors: floors,
+                            twoManCrew: crew
+                        )
+                    }
                 }
+            }
+            .alert(
+                "Payment failed",
+                isPresented: Binding(
+                    get: { paymentError != nil },
+                    set: { if !$0 { paymentError = nil } }
+                ),
+                presenting: paymentError
+            ) { _ in
+                Button("OK", role: .cancel) { paymentError = nil }
+            } message: { msg in
+                Text(msg)
             }
             .sheet(isPresented: $showingScheduleSheet) {
                 ItemCategorySheet { category, photoData in

@@ -132,10 +132,62 @@ navigation, live tracking, photo of the item, payout — happens in one place.
 - [x] Live Activity / Dynamic Island online banner
 - [x] APNs push for new offers
 - [x] Photo attachment on orders
-- [ ] Stripe payments
+- [~] Stripe payments — scaffold landed, awaiting Stripe keys (see **Payments** below)
 - [ ] Persistent chat between customer and driver
 - [ ] In-app ratings and reviews history
 - [ ] Public App Store release
+
+## Payments
+
+ShypQuick uses **Apple Pay over Stripe** with an *authorize-on-request,
+capture-on-delivery* model:
+
+1. Customer fills out the request, taps **Request now**, picks a category.
+2. The app calls the `create-payment-intent` edge function, which creates a
+   Stripe PaymentIntent with `capture_method=manual`.
+3. The Stripe PaymentSheet (Apple Pay enabled) is presented. The customer's
+   card is **authorized** — funds reserved, not yet pulled.
+4. Only after the auth succeeds does the app insert the `job_offers` row
+   (with `payment_intent_id` set).
+5. Driver accepts, navigates, marks **delivered** → a Postgres trigger
+   (`capture_on_delivered`) calls `capture-payment-intent`, which captures
+   the auth in Stripe and writes back `payment_status='captured'`.
+6. If the customer cancels before pickup or the offer expires, the app calls
+   `cancel-payment-intent` to **void** the auth (or the auth simply expires
+   on Stripe's side after ~7 days).
+
+### Enabling payment in your build
+
+The scaffold is **disabled by default** — without keys, the app preserves
+its legacy "request without paying" behavior so existing TestFlight testers
+aren't broken.
+
+To turn it on, you need:
+
+| Where | Key | Notes |
+|---|---|---|
+| `Resources/Secrets.plist` | `STRIPE_PUBLISHABLE_KEY` | `pk_test_…` or `pk_live_…` |
+| `Resources/Secrets.plist` | `APPLE_PAY_MERCHANT_ID` | e.g. `merchant.com.Dev.Shyp-Quick` (must be registered in Apple Developer + added to entitlements) |
+| Xcode → SPM | `https://github.com/stripe/stripe-ios` | Add `StripePaymentSheet` to the `ShypQuick` target |
+| Supabase env | `STRIPE_SECRET_KEY` | `sk_test_…` or `sk_live_…`, set on all three edge functions |
+| Supabase env | `PAYMENT_WEBHOOK_SECRET` | Random 32+ char secret, also stored in `vault.decrypted_secrets` as `payment_webhook_secret` for the trigger |
+
+Without the iOS keys, `PaymentService.authorize` returns `.notConfigured`
+and the request goes through with no auth. Without `STRIPE_SECRET_KEY` on
+the edge functions, they return 503 and the iOS client treats it as
+`.notConfigured` (same fallback).
+
+### Edge functions
+
+```
+supabase/functions/
+  create-payment-intent/    # auth-required, called from iOS pre-request
+  capture-payment-intent/   # called from DB trigger on delivered
+  cancel-payment-intent/    # auth-required, called from iOS on cancel
+```
+
+Deploy the trigger-called function with `--no-verify-jwt` (matches
+`push-new-offer`); the others verify JWTs by default.
 
 ## Contact
 
