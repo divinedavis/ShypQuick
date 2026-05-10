@@ -2,23 +2,15 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>aps-environment</key>
+	<string>production</string>
 	<key>com.apple.developer.applesignin</key>
 	<array>
 		<string>Default</string>
 	</array>
-	<key>aps-environment</key>
-	<string>production</string>
-	<!--
-		Apple Pay entitlement is enabled in the dev portal and the merchant
-		ID merchant.com.Dev.Shyp-Quick is registered (resource 564TRG8QJ6),
-		but the merchant ID must be associated with this App ID via Xcode
-		(Project → Signing & Capabilities → Apple Pay → check this merchant
-		ID) — the App Store Connect API doesn't expose that link. After
-		that one click, uncomment the array below and re-archive.
-		<key>com.apple.developer.in-app-payments</key>
-		<array>
-			<string>merchant.com.Dev.Shyp-Quick</string>
-		</array>
-	-->
+	<key>com.apple.developer.in-app-payments</key>
+	<array>
+		<string>merchant.com.Dev.Shyp-Quick</string>
+	</array>
 </dict>
 </plist>
