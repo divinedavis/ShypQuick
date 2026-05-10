@@ -5,7 +5,6 @@ import Auth
 
 #if canImport(StripePaymentSheet)
 import StripePaymentSheet
-import StripeCore
 #endif
 
 /// Apple Pay + Stripe scaffold.
@@ -51,7 +50,7 @@ final class PaymentService {
         self.config = cfg
         #if canImport(StripePaymentSheet)
         if let cfg {
-            StripeAPI.defaultPublishableKey = cfg.publishableKey
+            STPAPIClient.shared.publishableKey = cfg.publishableKey
         }
         #endif
     }

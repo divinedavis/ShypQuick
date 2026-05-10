@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		20ABA1231769159459240B34 /* ShypQuickLiveActivity.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 24BEC5E4973974A29FB54FAD /* ShypQuickLiveActivity.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4EB7915EA17619DDD9D9CF40 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 296150AB0C4BF2C7ADEE5814 /* Foundation.framework */; };
+		652B87975517A9909D693B15 /* StripePaymentSheet in Frameworks */ = {isa = PBXBuildFile; productRef = 976B724BCE264A14EA308227 /* StripePaymentSheet */; };
 		9ECC24D2C657626E2E9F7AB1 /* ShypQuickLiveActivityWidget.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8E8989E21F87DBF2B8198EF /* ShypQuickLiveActivityWidget.swift */; };
 		AAAA000000000000000000A3 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = AAAA000000000000000000A2 /* Supabase */; };
 		ABE36AE46DCACFC7B4847E1E /* ShypQuickLiveActivityBundle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10C8FBA5EADAD336C6E9754 /* ShypQuickLiveActivityBundle.swift */; };
@@ -93,6 +94,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				AAAA000000000000000000A3 /* Supabase in Frameworks */,
+				652B87975517A9909D693B15 /* StripePaymentSheet in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -194,6 +196,7 @@
 			name = ShypQuick;
 			packageProductDependencies = (
 				AAAA000000000000000000A2 /* Supabase */,
+				976B724BCE264A14EA308227 /* StripePaymentSheet */,
 			);
 			productName = ShypQuick;
 			productReference = 163E46A82F8EBEE000040733 /* ShypQuick.app */;
@@ -284,6 +287,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				AAAA000000000000000000A1 /* XCRemoteSwiftPackageReference "supabase-swift" */,
+				5F6807D9C6FF1180CD4E494C /* XCRemoteSwiftPackageReference "stripe-ios" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 163E46A92F8EBEE000040733 /* Products */;
@@ -789,6 +793,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		5F6807D9C6FF1180CD4E494C /* XCRemoteSwiftPackageReference "stripe-ios" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/stripe/stripe-ios";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 24.0.0;
+			};
+		};
 		AAAA000000000000000000A1 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/supabase/supabase-swift";
@@ -800,6 +812,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		976B724BCE264A14EA308227 /* StripePaymentSheet */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 5F6807D9C6FF1180CD4E494C /* XCRemoteSwiftPackageReference "stripe-ios" */;
+			productName = StripePaymentSheet;
+		};
 		AAAA000000000000000000A2 /* Supabase */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = AAAA000000000000000000A1 /* XCRemoteSwiftPackageReference "supabase-swift" */;
