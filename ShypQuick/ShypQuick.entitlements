@@ -8,9 +8,14 @@
 	</array>
 	<key>aps-environment</key>
 	<string>production</string>
-	<key>com.apple.developer.in-app-payments</key>
-	<array>
-		<string>merchant.com.Dev.Shyp-Quick</string>
-	</array>
+	<!--
+		Apple Pay (in-app-payments) deferred until the merchant ID is
+		registered + the provisioning profile carries the capability.
+		Re-add the block below when ready, then run scripts/sync_capabilities.
+		<key>com.apple.developer.in-app-payments</key>
+		<array>
+			<string>merchant.com.Dev.Shyp-Quick</string>
+		</array>
+	-->
 </dict>
 </plist>
