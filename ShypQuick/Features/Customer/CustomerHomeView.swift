@@ -55,6 +55,24 @@ struct CustomerHomeView: View {
     )
     @State private var paymentError: String?
     @State private var isProcessingPayment = false
+    /// Captured at the moment the customer picks a category. The payment +
+    /// dispatch flow reads this from the sheet's `onDismiss` (i.e. AFTER the
+    /// SwiftUI sheet is fully gone) so Stripe PaymentSheet can present
+    /// cleanly without racing the dismissal animation.
+    @State private var pendingRequest: PendingRequest?
+
+    struct PendingRequest {
+        let category: ItemCategory
+        let photoData: Data?
+        let pickup: CLLocationCoordinate2D
+        let dropoff: CLLocationCoordinate2D
+        let pickupAddress: String
+        let dropoffAddress: String
+        let quote: PricingService.Quote
+        let sameHour: Bool
+        let stairsFloors: Int
+        let twoManCrew: Bool
+    }
 
     enum Field: Hashable { case pickup, dropoff }
 
@@ -125,34 +143,25 @@ struct CustomerHomeView: View {
 
     /// Authorize the customer's card via Apple Pay (when configured), then
     /// post the job offer with the resulting payment_intent_id. If Stripe
-    /// isn't configured yet, falls back to posting the offer with no hold so
+    /// isn't configured, falls back to posting the offer with no hold so
     /// the legacy free flow keeps working.
-    private func processRequest(
-        category: ItemCategory,
-        photoData: Data?,
-        pickup p: CLLocationCoordinate2D,
-        dropoff d: CLLocationCoordinate2D,
-        pickupAddress pickupAddr: String,
-        dropoffAddress dropoffAddr: String,
-        quote: PricingService.Quote,
-        sameHour rush: Bool,
-        stairsFloors floors: Int,
-        twoManCrew crew: Bool
-    ) async {
+    ///
+    /// Called from the category sheet's `onDismiss` — by that point the
+    /// SwiftUI sheet is fully gone, so Stripe PaymentSheet has a clean
+    /// presenter (the root view controller of the key window).
+    private func processRequest(_ req: PendingRequest) async {
         isProcessingPayment = true
         defer { isProcessingPayment = false }
-
-        // Let the SwiftUI category sheet finish dismissing before we present
-        // a UIKit-backed PaymentSheet from the same window.
-        try? await Task.sleep(nanoseconds: 350_000_000)
 
         let result: PaymentService.AuthorizeResult
         if let presenter = rootViewController() {
             result = await PaymentService.shared.authorize(
-                amountCents: quote.totalCents,
+                amountCents: req.quote.totalCents,
                 presenter: presenter
             )
         } else {
+            // No window we can present from — fall through to legacy free
+            // flow rather than dropping the request silently.
             result = .notConfigured
         }
 
@@ -161,7 +170,6 @@ struct CustomerHomeView: View {
         case .authorized(let id):
             intentId = id
         case .notConfigured:
-            // Stripe not set up yet — preserve the existing free flow.
             intentId = nil
         case .cancelled:
             return
@@ -171,28 +179,28 @@ struct CustomerHomeView: View {
         }
 
         DispatchService.shared.postOffer(
-            pickupAddress: pickupAddr,
-            dropoffAddress: dropoffAddr,
-            pickup: p,
-            dropoff: d,
-            size: category.size,
-            vehicleType: category.vehicleType,
-            sameHour: rush,
-            totalCents: quote.totalCents,
-            photoData: photoData,
-            categoryTitle: category.title,
-            categoryIcon: category.icon,
+            pickupAddress: req.pickupAddress,
+            dropoffAddress: req.dropoffAddress,
+            pickup: req.pickup,
+            dropoff: req.dropoff,
+            size: req.category.size,
+            vehicleType: req.category.vehicleType,
+            sameHour: req.sameHour,
+            totalCents: req.quote.totalCents,
+            photoData: req.photoData,
+            categoryTitle: req.category.title,
+            categoryIcon: req.category.icon,
             paymentIntentId: intentId
         )
         routeRequest = RouteRequest(
-            pickupAddress: pickupAddr,
-            dropoffAddress: dropoffAddr,
-            pickupLat: p.latitude, pickupLng: p.longitude,
-            dropoffLat: d.latitude, dropoffLng: d.longitude,
-            size: category.size,
-            sameHour: rush,
-            stairsFloors: floors,
-            twoManCrew: crew
+            pickupAddress: req.pickupAddress,
+            dropoffAddress: req.dropoffAddress,
+            pickupLat: req.pickup.latitude, pickupLng: req.pickup.longitude,
+            dropoffLat: req.dropoff.latitude, dropoffLng: req.dropoff.longitude,
+            size: req.category.size,
+            sameHour: req.sameHour,
+            stairsFloors: req.stairsFloors,
+            twoManCrew: req.twoManCrew
         )
     }
 
@@ -269,7 +277,21 @@ struct CustomerHomeView: View {
             }
             .navigationTitle("Send a package")
             .navigationBarTitleDisplayMode(.inline)
-            .sheet(isPresented: $showingCategorySheet) {
+            .sheet(
+                isPresented: $showingCategorySheet,
+                onDismiss: {
+                    // Run AFTER the sheet animation completes so the
+                    // Stripe PaymentSheet has a clean presenter. Without
+                    // this, presenting UIKit-style from inside the SwiftUI
+                    // sheet's onSelect closure raced the dismissal and
+                    // silently hung the flow (no payment sheet, no route).
+                    guard let req = pendingRequest else { return }
+                    pendingRequest = nil
+                    Task { @MainActor in
+                        await processRequest(req)
+                    }
+                }
+            ) {
                 ItemCategorySheet { category, photoData in
                     selectedCategory = category
                     itemSize = category.size
@@ -280,24 +302,18 @@ struct CustomerHomeView: View {
                         pickup: p, dropoff: d,
                         surcharges: currentSurcharges
                     )
-                    let pickupAddr = pickupAddress
-                    let dropoffAddr = dropoffAddress
-                    let rush = sameHour
-                    let floors = stairsFloors
-                    let crew = twoManCrew
-                    Task { @MainActor in
-                        await processRequest(
-                            category: category,
-                            photoData: photoData,
-                            pickup: p, dropoff: d,
-                            pickupAddress: pickupAddr,
-                            dropoffAddress: dropoffAddr,
-                            quote: quote,
-                            sameHour: rush,
-                            stairsFloors: floors,
-                            twoManCrew: crew
-                        )
-                    }
+                    pendingRequest = PendingRequest(
+                        category: category,
+                        photoData: photoData,
+                        pickup: p,
+                        dropoff: d,
+                        pickupAddress: pickupAddress,
+                        dropoffAddress: dropoffAddress,
+                        quote: quote,
+                        sameHour: sameHour,
+                        stairsFloors: stairsFloors,
+                        twoManCrew: twoManCrew
+                    )
                 }
             }
             .alert(
