@@ -132,6 +132,7 @@ navigation, live tracking, photo of the item, payout — happens in one place.
 - [x] Live Activity / Dynamic Island online banner
 - [x] APNs push for new offers
 - [x] Photo attachment on orders
+- [x] Driver onboarding & roster — vehicle, equipment, crew, compliance docs, payout info (see **Driver roster** below)
 - [~] Stripe payments — scaffold landed, awaiting Stripe keys (see **Payments** below)
 - [ ] Persistent chat between customer and driver
 - [ ] In-app ratings and reviews history
@@ -188,6 +189,22 @@ supabase/functions/
 
 Deploy the trigger-called function with `--no-verify-jwt` (matches
 `push-new-offer`); the others verify JWTs by default.
+
+## Driver roster
+
+Drivers fill out an onboarding & roster profile from **Profile → Driver
+details** (visible to `driver` and `both` roles). It captures everything
+dispatch needs — basic info, vehicle, equipment, crew, service area &
+availability, compliance documents, delivery experience, specialized
+services, payout method, and vehicle photos.
+
+| Store | Holds | Access |
+|---|---|---|
+| `driver_profiles` | The roster row (all non-sensitive fields) | Owner-only RLS |
+| `driver_tax_info` | SSN/EIN for 1099 processing — isolated table | Owner-only RLS, never granted to `anon` |
+| `driver-documents` bucket | License, insurance, registration & vehicle photos | Private; owner-only folder (`<uid>/…`) |
+
+Schema: `supabase/migrations/20260516000000_driver_onboarding.sql`.
 
 ## Contact
 

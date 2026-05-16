@@ -41,6 +41,24 @@ struct ProfileView: View {
                     }
                 }
 
+                if profile.role == .driver || profile.role == .both {
+                    Section("Driver") {
+                        NavigationLink {
+                            DriverDetailsView(profileId: profile.id)
+                        } label: {
+                            HStack {
+                                Image(systemName: "steeringwheel").foregroundStyle(.tint)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Driver details")
+                                    Text("Vehicle, equipment, compliance & payout info")
+                                        .font(.caption)
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 Section {
                     Button("Sign out", role: .destructive) {
                         Task { await session.signOut() }
