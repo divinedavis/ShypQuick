@@ -441,7 +441,35 @@ final class DispatchService: ObservableObject {
         }
     }
 
+    /// Flips the driver's online flag in driver_locations. Deliberately does
+    /// NOT write lat/lng — those are owned by `updateDriverLocation`, and
+    /// writing 0,0 here would clobber a real GPS fix and make the server
+    /// think the driver is in the Gulf of Guinea (which broke radius
+    /// matching entirely). The lat/lng columns default to 0, so the very
+    /// first flag-only upsert for a brand-new driver still inserts cleanly;
+    /// `updateDriverLocation` corrects the coordinates on the first fix.
     func setDriverOnline(_ online: Bool) {
+        Task {
+            do {
+                let userId = try await client.auth.session.user.id
+                struct OnlineFlagRow: Encodable {
+                    let driver_id: UUID
+                    let is_online: Bool
+                }
+                try await client
+                    .from("driver_locations")
+                    .upsert(OnlineFlagRow(driver_id: userId, is_online: online))
+                    .execute()
+            } catch { }
+        }
+    }
+
+    /// Pushes the driver's live GPS coordinate to driver_locations so the
+    /// dispatcher can match offers against their travel-radius preference.
+    /// Without this the server only ever saw 0,0 and a driver in SC was
+    /// offered pickups in NY. Called whenever LocationService emits a fresh
+    /// fix while the driver is online.
+    func updateDriverLocation(_ coordinate: CLLocationCoordinate2D) {
         Task {
             do {
                 let userId = try await client.auth.session.user.id
@@ -455,8 +483,9 @@ final class DispatchService: ObservableObject {
                     .from("driver_locations")
                     .upsert(DriverLocationRow(
                         driver_id: userId,
-                        is_online: online,
-                        lat: 0, lng: 0
+                        is_online: true,
+                        lat: coordinate.latitude,
+                        lng: coordinate.longitude
                     ))
                     .execute()
             } catch { }

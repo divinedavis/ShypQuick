@@ -68,6 +68,12 @@ struct DriverHomeView: View {
                             location.startUpdating()
                             dispatch.startListening()
                             dispatch.setDriverOnline(true)
+                            // If we already have a fix from earlier, push it
+                            // now — onChange won't re-fire for an unchanged
+                            // location, and the dispatcher needs it to match.
+                            if let coord = location.currentLocation?.coordinate {
+                                dispatch.updateDriverLocation(coord)
+                            }
                             showSimulate = true
                             DriverActivityManager.shared.startOnlineActivity()
                         } else {
@@ -126,6 +132,11 @@ struct DriverHomeView: View {
                         span: MKCoordinateSpan(latitudeDelta: 0.04, longitudeDelta: 0.04)
                     )
                 )
+                // Keep the server's idea of where this driver is current so
+                // the dispatcher can honour their travel-radius preference.
+                if isOnline {
+                    dispatch.updateDriverLocation(coord)
+                }
             }
             .onChange(of: scenePhase) { _, phase in
                 // If the driver was online and the app goes to background, the
@@ -141,6 +152,9 @@ struct DriverHomeView: View {
                     location.requestPermission()
                     location.startUpdating()
                     dispatch.setDriverOnline(true)
+                    if let coord = location.currentLocation?.coordinate {
+                        dispatch.updateDriverLocation(coord)
+                    }
                     dispatch.startListening()
                     dispatch.notificationTapped = false
                 }
