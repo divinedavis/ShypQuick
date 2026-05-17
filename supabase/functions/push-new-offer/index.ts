@@ -58,15 +58,26 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get push tokens for online drivers only
-    const { data: onlineDrivers } = await supabase
-      .from("driver_locations")
-      .select("driver_id")
-      .eq("is_online", true);
+    // Only notify online drivers whose travel-radius preference covers this
+    // pickup. online_drivers_for_offer() compares each driver's stored
+    // location against their max_travel_radius_mi — without this a driver in
+    // SC was getting NY offers 593 mi away.
+    const { data: matchedDrivers, error: matchError } = await supabase
+      .rpc("online_drivers_for_offer", {
+        pickup_lat: record.pickup_lat,
+        pickup_lng: record.pickup_lng,
+      });
 
-    const onlineIds = (onlineDrivers || []).map((d: any) => d.driver_id);
+    if (matchError) {
+      return new Response(
+        JSON.stringify({ error: "driver_match_failed", detail: matchError.message }),
+        { status: 500, headers: { "Content-Type": "application/json" } }
+      );
+    }
+
+    const onlineIds = (matchedDrivers || []).map((d: any) => d.driver_id);
     if (!onlineIds.length) {
-      return new Response("No online drivers", { status: 200 });
+      return new Response("No online drivers in range", { status: 200 });
     }
 
     const { data: tokens, error } = await supabase
