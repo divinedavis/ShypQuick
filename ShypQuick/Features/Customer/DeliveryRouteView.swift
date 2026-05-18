@@ -7,6 +7,8 @@ struct DeliveryRouteView: View {
     let pickup: CLLocationCoordinate2D
     let dropoff: CLLocationCoordinate2D
     let quote: PricingService.Quote
+    /// Real job_offers row id to track live. nil if the post failed.
+    let offerId: UUID?
 
     @Environment(\.dismiss) private var dismiss
     @StateObject private var simulation = DeliverySimulation()
@@ -67,7 +69,15 @@ struct DeliveryRouteView: View {
         }
         .navigationTitle("Driver route")
         .navigationBarTitleDisplayMode(.inline)
-        .task { await calculateRoute() }
+        .task {
+            await calculateRoute()
+            if let offerId {
+                simulation.track(offerId: offerId, pickup: pickup, dropoff: dropoff)
+            } else {
+                errorMessage = DispatchService.shared.lastPostError
+                    ?? "Couldn't post this delivery. Please try again."
+            }
+        }
         .onDisappear { simulation.cancel() }
         .onChange(of: simulation.phase) { _, newPhase in
             if newPhase == .delivered {
@@ -150,10 +160,15 @@ struct DeliveryRouteView: View {
                 }
 
                 Button {
-                    if simulation.phase == .delivered {
+                    switch simulation.phase {
+                    case .delivered:
                         dismiss()
-                    } else {
-                        simulation.start(pickup: pickup, dropoff: dropoff)
+                    case .failed:
+                        if let offerId {
+                            simulation.track(offerId: offerId, pickup: pickup, dropoff: dropoff)
+                        }
+                    default:
+                        break
                     }
                 } label: {
                     Text(findDriverButtonLabel)
@@ -171,19 +186,19 @@ struct DeliveryRouteView: View {
 
     private var findDriverButtonLabel: String {
         switch simulation.phase {
-        case .idle, .failed: return "Find a driver"
-        case .searching: return "Searching…"
+        case .idle: return "Preparing…"
+        case .failed: return "Keep waiting"
+        case .searching: return "Finding a driver…"
         case .assigned, .enRouteToPickup: return "Driver en route"
         case .atPickup: return "At pickup"
         case .enRouteToDropoff: return "Delivering"
-        case .delivered: return "OK"
+        case .delivered: return "Done"
         }
     }
 
     private var isFindDriverDisabled: Bool {
         switch simulation.phase {
-        case .idle, .failed: return false
-        case .delivered: return false
+        case .failed, .delivered: return false
         default: return true
         }
     }

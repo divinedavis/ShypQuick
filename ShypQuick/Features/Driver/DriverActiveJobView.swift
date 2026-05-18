@@ -131,6 +131,9 @@ struct DriverActiveJobView: View {
 
                         if !pickedUp {
                             Button {
+                                // Write picked_up to the DB so the customer
+                                // gets a real "picked up" push + status.
+                                Task { await dispatch.markPickedUp(job) }
                                 withAnimation { pickedUp = true }
                             } label: {
                                 Text("Mark picked up")

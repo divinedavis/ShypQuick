@@ -45,6 +45,9 @@ struct CustomerHomeView: View {
         let sameHour: Bool
         let stairsFloors: Int
         let twoManCrew: Bool
+        /// Real job_offers row id, so DeliveryRouteView can track it live.
+        /// nil when the post failed.
+        let offerId: UUID?
     }
 
     @State private var cameraPosition: MapCameraPosition = .region(
@@ -178,7 +181,7 @@ struct CustomerHomeView: View {
             return
         }
 
-        DispatchService.shared.postOffer(
+        let posted = await DispatchService.shared.postOffer(
             pickupAddress: req.pickupAddress,
             dropoffAddress: req.dropoffAddress,
             pickup: req.pickup,
@@ -200,7 +203,8 @@ struct CustomerHomeView: View {
             size: req.category.size,
             sameHour: req.sameHour,
             stairsFloors: req.stairsFloors,
-            twoManCrew: req.twoManCrew
+            twoManCrew: req.twoManCrew,
+            offerId: posted?.id
         )
     }
 
@@ -382,7 +386,8 @@ struct CustomerHomeView: View {
                     dropoffAddress: req.dropoffAddress,
                     pickup: pickup,
                     dropoff: dropoff,
-                    quote: quote
+                    quote: quote,
+                    offerId: req.offerId
                 )
             }
             .task {

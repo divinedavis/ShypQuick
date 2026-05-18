@@ -195,6 +195,10 @@ final class DispatchService: ObservableObject {
 
     // MARK: - Customer: post offer to Supabase
 
+    /// Posts the job offer and returns the created `JobOffer` (with its real
+    /// DB id) so the customer's `DeliveryRouteView` can track it live.
+    /// Returns nil on failure — `lastPostError` carries the reason.
+    @discardableResult
     func postOffer(
         pickupAddress: String,
         dropoffAddress: String,
@@ -208,72 +212,67 @@ final class DispatchService: ObservableObject {
         categoryTitle: String,
         categoryIcon: String,
         paymentIntentId: String? = nil
-    ) {
-        guard !isPosting else { return }
+    ) async -> JobOffer? {
+        guard !isPosting else { return nil }
         isPosting = true
         lastPostError = nil
-        Task {
-            defer { Task { @MainActor in self.isPosting = false } }
-            do {
-                let userId = try await client.auth.session.user.id
+        defer { isPosting = false }
+        do {
+            let userId = try await client.auth.session.user.id
 
-                // Upload photo if provided. If upload fails, we fail the
-                // whole post rather than silently saving an offer with no
-                // photo — the customer wanted that photo attached. Bucket is
-                // private; we store the object path (not a public URL) and
-                // the viewer mints a signed URL on demand.
-                var uploadedUrl: String?
-                if let photoData {
-                    // Storage RLS compares folder against auth.uid()::text which
-                    // Postgres formats lowercase; Swift's uuidString is uppercase.
-                    // Force lowercase on both segments so the policy match holds.
-                    let path = "\(userId.uuidString.lowercased())/\(UUID().uuidString.lowercased()).jpg"
-                    try await client.storage
-                        .from("item-photos")
-                        .upload(path, data: photoData, options: .init(contentType: "image/jpeg"))
-                    uploadedUrl = path
-                }
-
-                let insert = JobOfferInsert(
-                    customer_id: userId,
-                    pickup_address: pickupAddress,
-                    dropoff_address: dropoffAddress,
-                    pickup_lat: pickup.latitude,
-                    pickup_lng: pickup.longitude,
-                    dropoff_lat: dropoff.latitude,
-                    dropoff_lng: dropoff.longitude,
-                    size: size.rawValue,
-                    vehicle_type: vehicleType,
-                    same_hour: sameHour,
-                    total_cents: totalCents,
-                    category_title: categoryTitle,
-                    category_icon: categoryIcon,
-                    photo_url: uploadedUrl,
-                    payment_intent_id: paymentIntentId,
-                    authorized_amount_cents: paymentIntentId == nil ? nil : totalCents,
-                    payment_status: paymentIntentId == nil ? "unauthorized" : "authorized"
-                )
-                try await client
-                    .from("job_offers")
-                    .insert(insert)
-                    .execute()
-            } catch {
-                print("DispatchService.postOffer error:", error)
-                lastPostError = error.localizedDescription
-                // Surface a local fallback so the simulation / route view can
-                // still run for the customer, but keep the error visible.
-                pendingOffer = JobOffer(
-                    id: UUID(),
-                    pickupAddress: pickupAddress,
-                    dropoffAddress: dropoffAddress,
-                    pickupLat: pickup.latitude, pickupLng: pickup.longitude,
-                    dropoffLat: dropoff.latitude, dropoffLng: dropoff.longitude,
-                    size: size, vehicleType: vehicleType, sameHour: sameHour,
-                    totalCents: totalCents,
-                    photoData: photoData, categoryTitle: categoryTitle,
-                    categoryIcon: categoryIcon, createdAt: Date()
-                )
+            // Upload photo if provided. If upload fails, we fail the
+            // whole post rather than silently saving an offer with no
+            // photo — the customer wanted that photo attached. Bucket is
+            // private; we store the object path (not a public URL) and
+            // the viewer mints a signed URL on demand.
+            var uploadedUrl: String?
+            if let photoData {
+                // Storage RLS compares folder against auth.uid()::text which
+                // Postgres formats lowercase; Swift's uuidString is uppercase.
+                // Force lowercase on both segments so the policy match holds.
+                let path = "\(userId.uuidString.lowercased())/\(UUID().uuidString.lowercased()).jpg"
+                try await client.storage
+                    .from("item-photos")
+                    .upload(path, data: photoData, options: .init(contentType: "image/jpeg"))
+                uploadedUrl = path
             }
+
+            let insert = JobOfferInsert(
+                customer_id: userId,
+                pickup_address: pickupAddress,
+                dropoff_address: dropoffAddress,
+                pickup_lat: pickup.latitude,
+                pickup_lng: pickup.longitude,
+                dropoff_lat: dropoff.latitude,
+                dropoff_lng: dropoff.longitude,
+                size: size.rawValue,
+                vehicle_type: vehicleType,
+                same_hour: sameHour,
+                total_cents: totalCents,
+                category_title: categoryTitle,
+                category_icon: categoryIcon,
+                photo_url: uploadedUrl,
+                payment_intent_id: paymentIntentId,
+                authorized_amount_cents: paymentIntentId == nil ? nil : totalCents,
+                payment_status: paymentIntentId == nil ? "unauthorized" : "authorized"
+            )
+            // .select() so we get the inserted row back — its id is what the
+            // customer's tracking screen subscribes to.
+            let rows: [JobOfferRow] = try await client
+                .from("job_offers")
+                .insert(insert)
+                .select()
+                .execute()
+                .value
+            guard let row = rows.first else {
+                lastPostError = "Couldn't create the delivery. Please try again."
+                return nil
+            }
+            return JobOffer(row: row)
+        } catch {
+            print("DispatchService.postOffer error:", error)
+            lastPostError = error.localizedDescription
+            return nil
         }
     }
 
@@ -489,6 +488,24 @@ final class DispatchService: ObservableObject {
                     ))
                     .execute()
             } catch { }
+        }
+    }
+
+    /// Driver confirms the item is in hand. Flips the job to `picked_up`,
+    /// which fires the on_job_offer_status_change trigger so the customer
+    /// gets a "picked up" push and their tracking screen advances. Keeps
+    /// driver_id intact — the driver still owns the job.
+    func markPickedUp(_ job: JobOffer) async {
+        struct StatusUpdate: Encodable { let status: String }
+        do {
+            try await client
+                .from("job_offers")
+                .update(StatusUpdate(status: "picked_up"))
+                .eq("id", value: job.id)
+                .eq("status", value: "accepted")
+                .execute()
+        } catch {
+            print("DispatchService.markPickedUp error:", error)
         }
     }
 

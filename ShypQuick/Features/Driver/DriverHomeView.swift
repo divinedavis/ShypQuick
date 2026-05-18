@@ -27,19 +27,21 @@ struct DriverHomeView: View {
         let size: ItemSize = Bool.random() ? .small : .large
         let sameHour = Bool.random()
         let quote = PricingService.quote(size: size, pickup: pickup, dropoff: dropoff, sameHour: sameHour)
-        dispatch.postOffer(
-            pickupAddress: "123 Test Pickup St, Brooklyn, NY",
-            dropoffAddress: "456 Test Dropoff Ave, Brooklyn, NY",
-            pickup: pickup,
-            dropoff: dropoff,
-            size: size,
-            vehicleType: size == .small ? "car" : "truck",
-            sameHour: sameHour,
-            totalCents: quote.totalCents,
-            photoData: nil,
-            categoryTitle: size == .small ? "Car" : "Truck",
-            categoryIcon: size == .small ? "car.fill" : "truck.box.fill"
-        )
+        Task {
+            await dispatch.postOffer(
+                pickupAddress: "123 Test Pickup St, Brooklyn, NY",
+                dropoffAddress: "456 Test Dropoff Ave, Brooklyn, NY",
+                pickup: pickup,
+                dropoff: dropoff,
+                size: size,
+                vehicleType: size == .small ? "car" : "truck",
+                sameHour: sameHour,
+                totalCents: quote.totalCents,
+                photoData: nil,
+                categoryTitle: size == .small ? "Car" : "Truck",
+                categoryIcon: size == .small ? "car.fill" : "truck.box.fill"
+            )
+        }
     }
 
     @State private var showOffer: JobOffer?
