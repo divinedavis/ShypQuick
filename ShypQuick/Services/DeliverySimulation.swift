@@ -73,11 +73,26 @@ final class DeliverySimulation: ObservableObject {
         phase = .searching
         pollTask = Task {
             while !Task.isCancelled {
-                await poll(offerId: offerId, pickup: pickup, dropoff: dropoff)
+                await poll(offerId: offerId, pickup: pickup)
                 if case .delivered = phase { break }
                 if phase.isFailed { break }
                 try? await Task.sleep(nanoseconds: pollIntervalSeconds * 1_000_000_000)
             }
+        }
+    }
+
+    /// Pure mapping from a job_offers status to a customer-facing phase.
+    /// `nil` for statuses that shouldn't change the displayed phase.
+    /// Exposed (and `nonisolated`) so it can be unit-tested directly.
+    nonisolated static func phase(forStatus status: String) -> Phase? {
+        switch status {
+        case "pending":   return .searching
+        case "accepted":  return .enRouteToPickup
+        case "picked_up": return .enRouteToDropoff
+        case "delivered": return .delivered
+        case "declined", "expired", "cancelled":
+            return .failed("This delivery didn't go through. Please try again.")
+        default:          return nil
         }
     }
 
@@ -102,11 +117,7 @@ final class DeliverySimulation: ObservableObject {
 
     private struct OfferIdParam: Encodable { let offer_id: UUID }
 
-    private func poll(
-        offerId: UUID,
-        pickup: CLLocationCoordinate2D,
-        dropoff: CLLocationCoordinate2D
-    ) async {
+    private func poll(offerId: UUID, pickup: CLLocationCoordinate2D) async {
         do {
             let rows: [DriverInfoRow] = try await client
                 .rpc("offer_driver_info", params: OfferIdParam(offer_id: offerId))
@@ -116,7 +127,7 @@ final class DeliverySimulation: ObservableObject {
                 // No row visible — offer not found or not ours. Keep waiting.
                 return
             }
-            await apply(row, pickup: pickup, dropoff: dropoff)
+            await apply(row, pickup: pickup)
         } catch {
             // Transient network error — leave the current phase and retry on
             // the next tick.
@@ -124,12 +135,8 @@ final class DeliverySimulation: ObservableObject {
         }
     }
 
-    /// Map a real job_offers status onto a customer-facing phase.
-    private func apply(
-        _ row: DriverInfoRow,
-        pickup: CLLocationCoordinate2D,
-        dropoff: CLLocationCoordinate2D
-    ) async {
+    /// Map a real job_offers row onto the customer-facing phase + driver pin.
+    private func apply(_ row: DriverInfoRow, pickup: CLLocationCoordinate2D) async {
         if let name = row.full_name, !name.isEmpty {
             driverName = name
         }
@@ -141,27 +148,13 @@ final class DeliverySimulation: ObservableObject {
             driverPosition = CLLocationCoordinate2D(latitude: lat, longitude: lng)
         }
 
-        switch row.status {
-        case "pending":
-            phase = .searching
-
-        case "accepted":
-            phase = .enRouteToPickup
-            if driverToPickupSeconds == nil, let from = driverPosition {
-                driverToPickupSeconds = try? await routeTravelTime(from: from, to: pickup)
-            }
-
-        case "picked_up":
-            phase = .enRouteToDropoff
-
-        case "delivered":
-            phase = .delivered
-
-        case "declined", "expired", "cancelled":
-            phase = .failed("This delivery didn't go through. Please try again.")
-
-        default:
-            break
+        if let mapped = Self.phase(forStatus: row.status) {
+            phase = mapped
+        }
+        // Once a driver is assigned, fetch the real driver→pickup ETA once.
+        if row.status == "accepted", driverToPickupSeconds == nil,
+           let from = driverPosition {
+            driverToPickupSeconds = try? await routeTravelTime(from: from, to: pickup)
         }
     }
 

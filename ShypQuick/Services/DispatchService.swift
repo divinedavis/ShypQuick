@@ -173,7 +173,26 @@ final class DispatchService: ObservableObject {
     private var client: SupabaseClient { SupabaseService.shared.client }
     private var realtimeChannel: RealtimeChannelV2?
 
-    private init() {}
+    private init() {
+        #if DEBUG && targetEnvironment(simulator)
+        // `-SHYP_UI_TEST_ACTIVE_JOB 1` seeds a deterministic active job so
+        // XCUITest can exercise DriverActiveJobView (pickup → delivery)
+        // without a live accepted offer.
+        if UserDefaults.standard.bool(forKey: "SHYP_UI_TEST_ACTIVE_JOB") {
+            activeJob = JobOffer(
+                id: UUID(uuidString: "00000000-0000-0000-0000-0000000000aa")!,
+                pickupAddress: "475 Alabama Ave, Brooklyn, NY",
+                dropoffAddress: "Linden Blvd, South Ozone Park, NY",
+                pickupLat: 40.6646, pickupLng: -73.8966,
+                dropoffLat: 40.6712, dropoffLng: -73.9636,
+                size: .large, vehicleType: "truck", sameHour: false,
+                totalCents: 12_500, photoData: nil,
+                categoryTitle: "Truck", categoryIcon: "truck.box.fill",
+                createdAt: Date()
+            )
+        }
+        #endif
+    }
 
     // MARK: - Photo URL resolution
     //

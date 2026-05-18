@@ -13,7 +13,7 @@ struct ShypQuickApp: App {
                 .task {
                     if uiTestModeEnabled {
                         #if DEBUG
-                        session.signInForUITest()
+                        session.signInForUITest(role: uiTestDriverMode ? .driver : .customer)
                         #endif
                         return
                     }
@@ -31,6 +31,17 @@ struct ShypQuickApp: App {
     private var uiTestModeEnabled: Bool {
         #if DEBUG && targetEnvironment(simulator)
         return UserDefaults.standard.bool(forKey: "SHYP_UI_TEST")
+        #else
+        return false
+        #endif
+    }
+
+    /// `-SHYP_UI_TEST_DRIVER 1` makes the UI-test stub sign in as a driver
+    /// instead of a customer, so the driver flow (active job, pickup,
+    /// delivery) can be exercised by XCUITest.
+    private var uiTestDriverMode: Bool {
+        #if DEBUG && targetEnvironment(simulator)
+        return UserDefaults.standard.bool(forKey: "SHYP_UI_TEST_DRIVER")
         #else
         return false
         #endif
