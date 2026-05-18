@@ -58,14 +58,16 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Only notify online drivers whose travel-radius preference covers this
-    // pickup. online_drivers_for_offer() compares each driver's stored
-    // location against their max_travel_radius_mi — without this a driver in
-    // SC was getting NY offers 593 mi away.
+    // Only notify online drivers eligible for this pickup.
+    // online_drivers_for_offer() applies two gates: a region gate (the
+    // pickup's state must be one the driver declared at onboarding) and a
+    // radius gate (within max_travel_radius_mi once GPS has synced).
+    // Without this a driver in SC was getting NY offers ~590 mi away.
     const { data: matchedDrivers, error: matchError } = await supabase
       .rpc("online_drivers_for_offer", {
         pickup_lat: record.pickup_lat,
         pickup_lng: record.pickup_lng,
+        pickup_addr: record.pickup_address,
       });
 
     if (matchError) {
