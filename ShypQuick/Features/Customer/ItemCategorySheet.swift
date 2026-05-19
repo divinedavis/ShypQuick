@@ -31,7 +31,7 @@ struct ItemCategorySheet: View {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("What are you shipping?")
                         .font(.title2.bold())
-                    Text("Add a photo (optional), then pick the vehicle your driver should bring.")
+                    Text("Take or upload a photo of your item — required — then pick the vehicle your driver should bring.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
 
@@ -39,14 +39,27 @@ struct ItemCategorySheet: View {
                         cameraCard
                         ForEach(ItemCategory.all) { category in
                             Button {
-                                let data = attachedImage?.jpegData(compressionQuality: 0.85)
+                                // A photo is mandatory: the button is disabled
+                                // until one is attached, so this guard is just
+                                // belt-and-suspenders.
+                                guard let data = attachedImage?
+                                    .jpegData(compressionQuality: 0.85) else { return }
                                 onSelect(category, data)
                                 dismiss()
                             } label: {
                                 categoryCard(category)
                             }
                             .buttonStyle(.plain)
+                            .disabled(attachedImage == nil)
+                            .opacity(attachedImage == nil ? 0.45 : 1)
                         }
+                    }
+
+                    if attachedImage == nil {
+                        Label("Add a photo above to choose your vehicle",
+                              systemImage: "camera.badge.ellipsis")
+                            .font(.caption)
+                            .foregroundStyle(.orange)
                     }
                 }
                 .padding()
@@ -121,11 +134,11 @@ struct ItemCategorySheet: View {
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    Text("optional")
+                    Text("required")
                         .font(.caption2.bold())
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.orange)
                         .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(Color.gray.opacity(0.15), in: Capsule())
+                        .background(Color.orange.opacity(0.15), in: Capsule())
                 }
             }
             .frame(maxWidth: .infinity, minHeight: 150)
