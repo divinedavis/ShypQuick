@@ -26,6 +26,8 @@ if (!WEBHOOK_SECRET) {
 interface CapturePayload {
   offer_id: string;
   payment_intent_id: string;
+  // Exact amount owed (total_cents). Omitted => capture the full auth.
+  amount_cents?: number;
 }
 
 serve(async (req) => {
@@ -48,7 +50,14 @@ serve(async (req) => {
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Stripe REST: POST /v1/payment_intents/:id/capture (no body = full auth amount)
+    // Stripe REST: POST /v1/payment_intents/:id/capture
+    // With amount_to_capture we charge exactly what's owed (total_cents);
+    // the hold carries surge headroom, so capturing the full auth would
+    // over-charge. Without it (no amount_cents) Stripe captures the full auth.
+    const captureBody = new URLSearchParams();
+    if (typeof payload.amount_cents === "number" && payload.amount_cents > 0) {
+      captureBody.set("amount_to_capture", String(Math.floor(payload.amount_cents)));
+    }
     const stripeResp = await fetch(
       `https://api.stripe.com/v1/payment_intents/${payload.payment_intent_id}/capture`,
       {
@@ -57,6 +66,7 @@ serve(async (req) => {
           Authorization: `Bearer ${STRIPE_SECRET_KEY}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
+        body: captureBody,
       }
     );
     const text = await stripeResp.text();

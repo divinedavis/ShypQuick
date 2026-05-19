@@ -105,16 +105,58 @@ struct DeliveryRouteView: View {
         }
     }
 
-    /// Relays the customer's decision on a driver-proposed upgrade, and
-    /// clears the prompt optimistically so it doesn't re-fire before the
-    /// next poll confirms the server cleared it.
+    /// Relays the customer's decision on a driver-proposed upgrade.
+    /// Approving re-authorizes the card for the upgraded total first — the
+    /// price only changes if that succeeds. Declining just clears it.
+    /// The prompt is cleared optimistically so it can't re-fire before the
+    /// next poll.
     private func respondToUpgrade(approve: Bool) {
-        if let offerId {
-            Task {
-                await DispatchService.shared.respondToUpgrade(offerId: offerId, approve: approve)
-            }
+        guard let offerId else {
+            simulation.pendingUpgrade = nil
+            return
         }
+        let newTotal = simulation.pendingUpgrade?.proposedCents ?? 0
         simulation.pendingUpgrade = nil
+
+        guard approve else {
+            Task { await DispatchService.shared.respondToUpgrade(offerId: offerId, approve: false) }
+            return
+        }
+
+        Task { @MainActor in
+            // Re-authorize the card for the upgraded total. The original
+            // hold only carries surge headroom, not the ~$110 truck jump.
+            var newPI: String?
+            if let presenter = rootViewController() {
+                let result = await PaymentService.shared.authorize(
+                    amountCents: newTotal, presenter: presenter)
+                switch result {
+                case .authorized(let pi):
+                    newPI = pi
+                case .notConfigured:
+                    newPI = nil   // Stripe off — apply the upgrade with no hold
+                case .cancelled, .failed:
+                    errorMessage = "Upgrade not approved — payment wasn't confirmed."
+                    return
+                }
+            }
+            await DispatchService.shared.respondToUpgrade(
+                offerId: offerId,
+                approve: true,
+                paymentIntentId: newPI,
+                authorizedCents: newPI == nil ? nil : newTotal
+            )
+        }
+    }
+
+    /// Topmost view controller — presenter for the Stripe payment sheet.
+    private func rootViewController() -> UIViewController? {
+        guard let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene }).first else { return nil }
+        let window = scene.windows.first(where: \.isKeyWindow) ?? scene.windows.first
+        var vc = window?.rootViewController
+        while let presented = vc?.presentedViewController { vc = presented }
+        return vc
     }
 
     private var phaseBanner: some View {

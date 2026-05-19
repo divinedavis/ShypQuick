@@ -156,10 +156,15 @@ struct CustomerHomeView: View {
         isProcessingPayment = true
         defer { isProcessingPayment = false }
 
+        // Authorize with surge headroom: an unaccepted offer's price can
+        // rise up to +$30 while it waits for a driver, so the hold must
+        // cover the cap. Capture at delivery only takes the actual total.
+        let surgeHeadroomCents = 3000
+        let authAmountCents = req.quote.totalCents + surgeHeadroomCents
         let result: PaymentService.AuthorizeResult
         if let presenter = rootViewController() {
             result = await PaymentService.shared.authorize(
-                amountCents: req.quote.totalCents,
+                amountCents: authAmountCents,
                 presenter: presenter
             )
         } else {
@@ -193,7 +198,8 @@ struct CustomerHomeView: View {
             photoData: req.photoData,
             categoryTitle: req.category.title,
             categoryIcon: req.category.icon,
-            paymentIntentId: intentId
+            paymentIntentId: intentId,
+            authorizedAmountCents: intentId == nil ? nil : authAmountCents
         )
         routeRequest = RouteRequest(
             pickupAddress: req.pickupAddress,

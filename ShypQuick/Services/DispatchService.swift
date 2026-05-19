@@ -230,7 +230,8 @@ final class DispatchService: ObservableObject {
         photoData: Data?,
         categoryTitle: String,
         categoryIcon: String,
-        paymentIntentId: String? = nil
+        paymentIntentId: String? = nil,
+        authorizedAmountCents: Int? = nil
     ) async -> JobOffer? {
         guard !isPosting else { return nil }
         isPosting = true
@@ -272,7 +273,8 @@ final class DispatchService: ObservableObject {
                 category_icon: categoryIcon,
                 photo_url: uploadedUrl,
                 payment_intent_id: paymentIntentId,
-                authorized_amount_cents: paymentIntentId == nil ? nil : totalCents,
+                authorized_amount_cents: paymentIntentId == nil
+                    ? nil : (authorizedAmountCents ?? totalCents),
                 payment_status: paymentIntentId == nil ? "unauthorized" : "authorized"
             )
             // .select() so we get the inserted row back — its id is what the
@@ -530,15 +532,28 @@ final class DispatchService: ObservableObject {
     /// Customer's response to a driver-proposed Car→Truck upgrade. Approving
     /// applies the new price + vehicle server-side; declining clears the
     /// proposal and the job stays a Car.
-    func respondToUpgrade(offerId: UUID, approve: Bool) async {
+    func respondToUpgrade(
+        offerId: UUID,
+        approve: Bool,
+        paymentIntentId: String? = nil,
+        authorizedCents: Int? = nil
+    ) async {
         struct UpgradeReply: Encodable {
             let p_offer_id: UUID
             let p_approve: Bool
+            // Synthesized Codable omits nil optionals, so the RPC falls back
+            // to its defaults when no re-authorized hold is supplied.
+            let p_payment_intent_id: String?
+            let p_authorized_cents: Int?
         }
         do {
             _ = try await client
                 .rpc("respond_to_offer_upgrade",
-                     params: UpgradeReply(p_offer_id: offerId, p_approve: approve))
+                     params: UpgradeReply(
+                        p_offer_id: offerId,
+                        p_approve: approve,
+                        p_payment_intent_id: paymentIntentId,
+                        p_authorized_cents: authorizedCents))
                 .execute()
         } catch {
             print("DispatchService.respondToUpgrade error:", error)
