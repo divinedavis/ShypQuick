@@ -43,10 +43,19 @@ final class DeliverySimulation: ObservableObject {
         }
     }
 
+    /// A driver-proposed Car→Truck upgrade awaiting the customer's approval.
+    struct PendingUpgrade: Equatable {
+        let currentCents: Int
+        let proposedCents: Int
+    }
+
     @Published var phase: Phase = .idle
     @Published var driverPosition: CLLocationCoordinate2D?
     @Published var driverName: String?
     @Published var etaSeconds: Int?
+    /// Non-nil when the driver has proposed an upgrade the customer must
+    /// approve. DeliveryRouteView surfaces this as an alert.
+    @Published var pendingUpgrade: PendingUpgrade?
     /// Real-world expected travel time (in seconds) for the driver to reach
     /// pickup, computed via MKDirections once a driver is assigned.
     @Published var driverToPickupSeconds: TimeInterval?
@@ -113,6 +122,8 @@ final class DeliverySimulation: ObservableObject {
         let driver_lat: Double?
         let driver_lng: Double?
         let status: String
+        let total_cents: Int?
+        let proposed_total_cents: Int?
     }
 
     private struct OfferIdParam: Encodable { let offer_id: UUID }
@@ -146,6 +157,13 @@ final class DeliverySimulation: ObservableObject {
         if let lat = row.driver_lat, let lng = row.driver_lng,
            !(lat == 0 && lng == 0) {
             driverPosition = CLLocationCoordinate2D(latitude: lat, longitude: lng)
+        }
+
+        // Surface a driver-proposed upgrade for the customer to approve.
+        if let proposed = row.proposed_total_cents, let current = row.total_cents {
+            pendingUpgrade = PendingUpgrade(currentCents: current, proposedCents: proposed)
+        } else {
+            pendingUpgrade = nil
         }
 
         if let mapped = Self.phase(forStatus: row.status) {

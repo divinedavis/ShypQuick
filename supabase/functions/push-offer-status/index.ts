@@ -69,17 +69,27 @@ serve(async (req) => {
 
     const payload = await req.json();
     const record = payload.record;
-    if (!record || !record.customer_id || !record.status) {
-      return new Response("Not a status change", { status: 200 });
+    if (!record || !record.customer_id) {
+      return new Response("Not a notifiable change", { status: 200 });
     }
 
-    const message = messageFor(
-      record.status,
-      record.category_title ?? "delivery",
-      record.dropoff_address ?? "the drop-off",
-    );
+    // A driver-proposed Car→Truck upgrade is awaiting the customer's OK.
+    let message: { title: string; body: string } | null;
+    if (typeof record.proposed_total_cents === "number") {
+      const newDollars = (record.proposed_total_cents / 100).toFixed(2);
+      message = {
+        title: "Your driver needs a Truck 🚚",
+        body: `Approve the upgrade in the app — your total would become $${newDollars}.`,
+      };
+    } else {
+      message = messageFor(
+        record.status ?? "",
+        record.category_title ?? "delivery",
+        record.dropoff_address ?? "the drop-off",
+      );
+    }
     if (!message) {
-      return new Response("Status not customer-facing", { status: 200 });
+      return new Response("Nothing customer-facing to send", { status: 200 });
     }
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);

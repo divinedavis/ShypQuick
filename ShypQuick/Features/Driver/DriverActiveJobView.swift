@@ -11,6 +11,7 @@ struct DriverActiveJobView: View {
     @State private var showingUpgradeAlert = false
     @State private var upgradeError: String?
     @State private var isUpgrading = false
+    @State private var showUpgradeSent = false
 
     init(job: JobOffer, onComplete: @escaping () -> Void) {
         self.initialJob = job
@@ -161,20 +162,26 @@ struct DriverActiveJobView: View {
             }
             .navigationTitle(pickedUp ? "En route to dropoff" : "Head to pickup")
             .navigationBarTitleDisplayMode(.inline)
-            .alert("Upgrade to Truck?", isPresented: $showingUpgradeAlert) {
+            .alert("Request Truck upgrade?", isPresented: $showingUpgradeAlert) {
                 Button("Cancel", role: .cancel) {}
-                Button("Upgrade") {
+                Button("Send request") {
                     Task {
                         isUpgrading = true
                         upgradeError = await DispatchService.shared.upgradeActiveJobToTruck()
                         isUpgrading = false
+                        if upgradeError == nil { showUpgradeSent = true }
                     }
                 }
             } message: {
-                Text("This adds \(PricingService.Quote.format(truckUpgradeDifferenceCents)) to the fare and tells the customer the item needs a Truck.")
+                Text("This asks the customer to approve a Truck upgrade (+\(PricingService.Quote.format(truckUpgradeDifferenceCents))). The fare changes only if they approve.")
+            }
+            .alert("Upgrade request sent", isPresented: $showUpgradeSent) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Waiting for the customer to approve the new price.")
             }
             .alert(
-                "Couldn't upgrade",
+                "Couldn't request upgrade",
                 isPresented: Binding(get: { upgradeError != nil }, set: { if !$0 { upgradeError = nil } })
             ) {
                 Button("OK", role: .cancel) { upgradeError = nil }

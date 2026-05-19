@@ -90,6 +90,31 @@ struct DeliveryRouteView: View {
                 dismiss()
             }
         }
+        .alert(
+            "Your driver needs a Truck",
+            isPresented: Binding(
+                get: { simulation.pendingUpgrade != nil },
+                set: { _ in }
+            ),
+            presenting: simulation.pendingUpgrade
+        ) { _ in
+            Button("Approve new price") { respondToUpgrade(approve: true) }
+            Button("Decline", role: .cancel) { respondToUpgrade(approve: false) }
+        } message: { upgrade in
+            Text("Your driver says this item needs a Truck. Approving changes your total from \(PricingService.Quote.format(upgrade.currentCents)) to \(PricingService.Quote.format(upgrade.proposedCents)).")
+        }
+    }
+
+    /// Relays the customer's decision on a driver-proposed upgrade, and
+    /// clears the prompt optimistically so it doesn't re-fire before the
+    /// next poll confirms the server cleared it.
+    private func respondToUpgrade(approve: Bool) {
+        if let offerId {
+            Task {
+                await DispatchService.shared.respondToUpgrade(offerId: offerId, approve: approve)
+            }
+        }
+        simulation.pendingUpgrade = nil
     }
 
     private var phaseBanner: some View {
@@ -144,6 +169,13 @@ struct DeliveryRouteView: View {
                     )
                     statBlock(title: "Total", value: quote.dollars)
                 }
+            }
+
+            if simulation.phase == .searching {
+                Label("No driver yet? Your offer rises $5 every 5 min (up to +$30) to find a driver faster.",
+                      systemImage: "arrow.up.forward.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
             }
 
             HStack(spacing: 12) {

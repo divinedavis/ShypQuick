@@ -430,33 +430,20 @@ final class DispatchService: ObservableObject {
         }
     }
 
+    /// A driver passes on an offer card — by tapping Decline or letting the
+    /// countdown lapse. This is LOCAL ONLY and must NOT touch the DB: one
+    /// driver passing can't kill the offer for everyone. The offer stays
+    /// `pending` and `sweep_pending_offers` keeps re-broadcasting it to
+    /// local drivers until one accepts.
     func decline(_ offer: JobOffer) {
         guard pendingOffer?.id == offer.id else { return }
         pendingOffer = nil
-        Task {
-            do {
-                try await client
-                    .from("job_offers")
-                    .update(JobOfferUpdate(status: "declined", driver_id: nil))
-                    .eq("id", value: offer.id)
-                    .eq("status", value: "pending")
-                    .execute()
-            } catch {
-                print("DispatchService.decline error:", error)
-            }
-        }
     }
 
+    /// A driver's offer-card countdown lapsed. Same as `decline` — a local
+    /// dismissal only, never a DB write.
     func expire(_ offer: JobOffer) {
-        guard pendingOffer?.id == offer.id else { return }
-        pendingOffer = nil
-        Task {
-            try? await client
-                .from("job_offers")
-                .update(JobOfferUpdate(status: "expired", driver_id: nil))
-                .eq("id", value: offer.id)
-                .execute()
-        }
+        decline(offer)
     }
 
     /// Flips the driver's online flag in driver_locations. Deliberately does
@@ -540,6 +527,24 @@ final class DispatchService: ObservableObject {
         }
     }
 
+    /// Customer's response to a driver-proposed Car→Truck upgrade. Approving
+    /// applies the new price + vehicle server-side; declining clears the
+    /// proposal and the job stays a Car.
+    func respondToUpgrade(offerId: UUID, approve: Bool) async {
+        struct UpgradeReply: Encodable {
+            let p_offer_id: UUID
+            let p_approve: Bool
+        }
+        do {
+            _ = try await client
+                .rpc("respond_to_offer_upgrade",
+                     params: UpgradeReply(p_offer_id: offerId, p_approve: approve))
+                .execute()
+        } catch {
+            print("DispatchService.respondToUpgrade error:", error)
+        }
+    }
+
     // MARK: - Driver: upgrade active job to a Truck
 
     private struct UpgradeParams: Encodable { let p_offer_id: UUID }
@@ -557,26 +562,13 @@ final class DispatchService: ObservableObject {
         guard let job = activeJob else { return "No active job." }
         guard job.vehicleType == "car" else { return "This job is already a Truck." }
         do {
-            let resp: UpgradeResponse = try await client
+            // The RPC now records a PROPOSAL and pings the customer — it
+            // does not apply the price change. The job's vehicle/price flip
+            // only when the customer approves, so `activeJob` is left as-is.
+            let _: UpgradeResponse = try await client
                 .rpc("upgrade_offer_to_truck", params: UpgradeParams(p_offer_id: job.id))
                 .execute()
                 .value
-            activeJob = JobOffer(
-                id: job.id,
-                pickupAddress: job.pickupAddress,
-                dropoffAddress: job.dropoffAddress,
-                pickupLat: job.pickupLat, pickupLng: job.pickupLng,
-                dropoffLat: job.dropoffLat, dropoffLng: job.dropoffLng,
-                size: .large,
-                vehicleType: "truck",
-                sameHour: job.sameHour,
-                totalCents: resp.new_total_cents,
-                photoData: job.photoData,
-                photoUrl: job.photoUrl,
-                categoryTitle: "Truck",
-                categoryIcon: "truck.box.fill",
-                createdAt: job.createdAt
-            )
             return nil
         } catch {
             print("DispatchService.upgradeActiveJobToTruck error:", error)
