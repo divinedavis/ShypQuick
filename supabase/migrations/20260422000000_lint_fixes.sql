@@ -1,11 +1,12 @@
 -- Supabase advisor lint fixes: function_search_path_mutable on trigger functions.
 --
 -- NOTE on rls_disabled_in_public / public.spatial_ref_sys:
--- This is PostGIS's coordinate-system reference table. It's owned by
--- `supabase_admin`, so neither ENABLE ROW LEVEL SECURITY nor REVOKE from
--- the `postgres` role takes effect (Postgres silently succeeds). It's
--- non-sensitive public reference data (same EPSG codes in every PostGIS
--- install). Dismiss the advisor notice in the Supabase dashboard.
+-- This is PostGIS's coordinate-system reference table, owned by supabase_admin.
+-- Neither ENABLE ROW LEVEL SECURITY nor REVOKE takes effect from the postgres
+-- role. The earlier guidance to dismiss the warning was wrong: anon and
+-- authenticated retain INSERT/UPDATE/DELETE/TRUNCATE through PostgREST, so
+-- the table was genuinely exposed. See 20260527000000_block_spatial_ref_sys_writes.sql
+-- for the actual fix (BEFORE-trigger that raises on writes).
 
 -- ============================================================
 -- handle_new_user: pin search_path (preserves current role logic)
