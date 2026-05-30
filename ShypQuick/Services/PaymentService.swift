@@ -68,19 +68,36 @@ final class PaymentService {
 
     // MARK: - Authorize
 
+    /// Trip context sent with the authorization request. The server uses it to
+    /// compute the authoritative fare floor so the hold can never be smaller
+    /// than the real minimum fare for this trip (defends against a tampered
+    /// low `amountCents`). Optional — when omitted the server falls back to the
+    /// base-fare minimum.
+    struct TripContext {
+        let size: String        // "small" | "large"
+        let pickupLat: Double
+        let pickupLng: Double
+        let dropoffLat: Double
+        let dropoffLng: Double
+        let sameHour: Bool
+    }
+
     /// Authorizes (does not capture) `amountCents` on the customer's card.
     /// Presents the Stripe PaymentSheet with Apple Pay enabled.
+    ///
+    /// `trip` lets the server floor the hold to the real fare; pass it whenever
+    /// the trip details are known (a nil `trip` only enforces the base minimum).
     ///
     /// Caller is expected to handle `.notConfigured` by falling through to
     /// the legacy free-flow request path, so partial setup never blocks the
     /// app from working.
-    func authorize(amountCents: Int, presenter: UIViewController) async -> AuthorizeResult {
+    func authorize(amountCents: Int, trip: TripContext? = nil, presenter: UIViewController) async -> AuthorizeResult {
         #if canImport(StripePaymentSheet)
         guard let config else { return .notConfigured }
 
         let intent: PaymentIntentInfo
         do {
-            intent = try await createPaymentIntent(amountCents: amountCents)
+            intent = try await createPaymentIntent(amountCents: amountCents, trip: trip)
         } catch PaymentError.notConfigured {
             return .notConfigured
         } catch {
@@ -114,6 +131,7 @@ final class PaymentService {
         }
         #else
         _ = amountCents
+        _ = trip
         _ = presenter
         return .notConfigured
         #endif
@@ -145,7 +163,15 @@ final class PaymentService {
         let paymentIntentId: String
     }
 
-    private struct CreateBody: Encodable { let amount_cents: Int }
+    private struct CreateBody: Encodable {
+        let amount_cents: Int
+        let size: String?
+        let pickup_lat: Double?
+        let pickup_lng: Double?
+        let dropoff_lat: Double?
+        let dropoff_lng: Double?
+        let same_hour: Bool?
+    }
     private struct CreateResponse: Decodable {
         let client_secret: String
         let payment_intent_id: String
@@ -157,10 +183,19 @@ final class PaymentService {
         case decode
     }
 
-    private func createPaymentIntent(amountCents: Int) async throws -> PaymentIntentInfo {
+    private func createPaymentIntent(amountCents: Int, trip: TripContext?) async throws -> PaymentIntentInfo {
+        let body = CreateBody(
+            amount_cents: amountCents,
+            size: trip?.size,
+            pickup_lat: trip?.pickupLat,
+            pickup_lng: trip?.pickupLng,
+            dropoff_lat: trip?.dropoffLat,
+            dropoff_lng: trip?.dropoffLng,
+            same_hour: trip?.sameHour
+        )
         let data = try await invokeFunction(
             name: "create-payment-intent",
-            body: CreateBody(amount_cents: amountCents),
+            body: body,
             requiresAuth: true
         )
         guard let resp = try? JSONDecoder().decode(CreateResponse.self, from: data) else {

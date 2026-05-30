@@ -165,6 +165,14 @@ struct CustomerHomeView: View {
         if let presenter = rootViewController() {
             result = await PaymentService.shared.authorize(
                 amountCents: authAmountCents,
+                trip: PaymentService.TripContext(
+                    size: req.quote.baseCents >= PricingService.largeBaseCents ? "large" : "small",
+                    pickupLat: req.pickup.latitude,
+                    pickupLng: req.pickup.longitude,
+                    dropoffLat: req.dropoff.latitude,
+                    dropoffLng: req.dropoff.longitude,
+                    sameHour: req.sameHour
+                ),
                 presenter: presenter
             )
         } else {
