@@ -15,6 +15,20 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// Constant-time comparison for the shared secret. `!==` on strings
+// short-circuits at the first differing byte, so how long the check takes leaks
+// how many leading bytes were correct. The secret is high-entropy so that is a
+// narrow signal rather than an open door, but the fix costs nothing.
+function secretEquals(got: string | null | undefined, expected: string | undefined): boolean {
+  if (!expected) return false;
+  const a = got ?? "";
+  if (a.length !== expected.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ expected.charCodeAt(i);
+  return diff === 0;
+}
+
+
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const STRIPE_SECRET_KEY = Deno.env.get("STRIPE_SECRET_KEY");
@@ -32,8 +46,7 @@ interface CapturePayload {
 
 serve(async (req) => {
   try {
-    const got = req.headers.get("x-payment-webhook-secret") ?? "";
-    if (got !== WEBHOOK_SECRET) {
+    if (!secretEquals(req.headers.get("x-payment-webhook-secret"), WEBHOOK_SECRET)) {
       return json({ error: "forbidden" }, 403);
     }
 
