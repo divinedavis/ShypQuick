@@ -19,6 +19,17 @@ const WEBHOOK_SECRET = Deno.env.get("PUSH_WEBHOOK_SECRET");
 if (!WEBHOOK_SECRET) {
   throw new Error("PUSH_WEBHOOK_SECRET env var is required");
 }
+// Constant-time comparison so the shared secret can't be recovered by timing
+// the response. Matches push-new-offer / capture-payment-intent.
+function secretEquals(got: string | null | undefined, expected: string | undefined): boolean {
+  if (!expected) return false;
+  const a = got ?? "";
+  if (a.length !== expected.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ expected.charCodeAt(i);
+  return diff === 0;
+}
+
 const BUNDLE_ID = "com.Dev.Shyp-Quick";
 const APNS_PAYLOAD_MAX_BYTES = 4096;
 const APNS_HOSTS = [
@@ -62,8 +73,7 @@ function messageFor(status: string, category: string, dropoff: string):
 
 serve(async (req) => {
   try {
-    const got = req.headers.get("x-push-new-offer-secret") ?? "";
-    if (got !== WEBHOOK_SECRET) {
+    if (!secretEquals(req.headers.get("x-push-new-offer-secret"), WEBHOOK_SECRET)) {
       return new Response("Forbidden", { status: 403 });
     }
 
