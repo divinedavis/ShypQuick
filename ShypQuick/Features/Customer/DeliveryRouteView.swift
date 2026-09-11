@@ -73,6 +73,22 @@ struct DeliveryRouteView: View {
             await calculateRoute()
             if let offerId {
                 simulation.track(offerId: offerId, pickup: pickup, dropoff: dropoff)
+                #if DEBUG && targetEnvironment(simulator)
+                // Marketing-screenshot helper ONLY: overrides the polled
+                // phase with a fake in-progress delivery so a live-tracking
+                // capture doesn't depend on a real driver/backend row.
+                // Compiled out of every non-simulator and non-DEBUG build.
+                if UserDefaults.standard.bool(forKey: "SHYP_UI_TEST_ROUTE_ENROUTE") {
+                    simulation.dispatchedAt = Date().addingTimeInterval(-300)
+                    simulation.phase = .enRouteToDropoff
+                    simulation.driverName = "Marcus"
+                    simulation.driverPosition = CLLocationCoordinate2D(
+                        latitude: (pickup.latitude + dropoff.latitude) / 2,
+                        longitude: (pickup.longitude + dropoff.longitude) / 2
+                    )
+                    simulation.etaSeconds = 480
+                }
+                #endif
             } else {
                 errorMessage = DispatchService.shared.lastPostError
                     ?? "Couldn't post this delivery. Please try again."

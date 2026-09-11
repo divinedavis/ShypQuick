@@ -407,6 +407,9 @@ struct CustomerHomeView: View {
             .task {
                 location.requestPermission()
                 location.startUpdating()
+                #if DEBUG && targetEnvironment(simulator)
+                applyMarketingScreenshotStubsIfNeeded()
+                #endif
             }
             .onChange(of: routeRequest) { oldValue, newValue in
                 // When the user returns from the route view (newValue == nil),
@@ -674,5 +677,51 @@ struct CustomerHomeView: View {
             }
         }
     }
+
+    #if DEBUG && targetEnvironment(simulator)
+    /// Marketing-screenshot helper ONLY — not part of the app's real flow.
+    /// Populates the form (for a pricing-breakdown capture) or jumps
+    /// straight into `DeliveryRouteView` (for a pickup/delivery-details or
+    /// live-tracking capture) from launch args, so `marketing/raw` shots
+    /// don't need a live Supabase account or a real posted order. Compiled
+    /// out of every non-simulator and non-DEBUG build.
+    ///
+    /// Launch args:
+    ///   -SHYP_UI_TEST_PRICING 1   — fills addresses, opens Add-ons, shows quote
+    ///   -SHYP_UI_TEST_ROUTE 1     — pushes DeliveryRouteView ("searching" phase)
+    private func applyMarketingScreenshotStubsIfNeeded() {
+        let defaults = UserDefaults.standard
+        let stubPickup = CLLocationCoordinate2D(latitude: 40.6646, longitude: -73.8966)
+        let stubDropoff = CLLocationCoordinate2D(latitude: 40.6712, longitude: -73.9636)
+        let stubPickupAddress = "475 Alabama Ave, Brooklyn, NY"
+        let stubDropoffAddress = "Linden Blvd, South Ozone Park, NY"
+
+        if defaults.bool(forKey: "SHYP_UI_TEST_PRICING") {
+            pickupAddress = stubPickupAddress
+            dropoffAddress = stubDropoffAddress
+            pickupCoord = stubPickup
+            dropoffCoord = stubDropoff
+            selectedCategory = ItemCategory.all.first(where: { $0.id == "large" })
+            itemSize = .large
+            twoManCrew = true
+            stairsFloors = 2
+            showingAddOns = true
+        }
+
+        if defaults.bool(forKey: "SHYP_UI_TEST_ROUTE") {
+            routeRequest = RouteRequest(
+                pickupAddress: stubPickupAddress,
+                dropoffAddress: stubDropoffAddress,
+                pickupLat: stubPickup.latitude, pickupLng: stubPickup.longitude,
+                dropoffLat: stubDropoff.latitude, dropoffLng: stubDropoff.longitude,
+                size: .large,
+                sameHour: false,
+                stairsFloors: 0,
+                twoManCrew: false,
+                offerId: UUID(uuidString: "00000000-0000-0000-0000-0000000000bb")
+            )
+        }
+    }
+    #endif
 }
 

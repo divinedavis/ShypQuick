@@ -1,0 +1,14 @@
+{
+  "name": "SHYP Quick",
+  "icon": "/Users/divinedavis/projects/ShypQuick/ShypQuick/Assets.xcassets/AppIcon.appiconset/app_icon_1024.png",
+  "raw_dir": "/Users/divinedavis/projects/ShypQuick/marketing/raw",
+  "out_dir": "/Users/divinedavis/projects/ShypQuick/marketing/asc-screenshots-pinterest",
+  "masonry": ["02-pricing.png", "04-live-tracking.png", "05-driver-view.png", "01-customer-home.png"],
+  "panels": [
+    ["02-pricing.png", "See your price upfront"],
+    ["03-pickup-delivery.png", "Your route, mapped"],
+    ["04-live-tracking.png", "Watch it arrive live"],
+    ["05-driver-view.png", "Drive, deliver, earn"]
+  ],
+  "stickers": ["📦", "🚚", "🛋️", "✨"]
+}
