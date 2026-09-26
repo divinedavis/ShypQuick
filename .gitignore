@@ -48,3 +48,8 @@ supabase/.temp/
 
 # CocoaPods (not used, but just in case)
 Pods/
+
+# Environment files (secrets)
+.env
+.env.*
+!.env.example
