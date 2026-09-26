@@ -2,14 +2,23 @@
 set -euo pipefail
 
 # ── Config ──────────────────────────────────────────────
-PROJECT_DIR="$HOME/Desktop/ShypQuick"
+PROJECT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT="ShypQuick.xcodeproj"
 SCHEME="ShypQuick"
 PBXPROJ="$PROJECT_DIR/$PROJECT/project.pbxproj"
 
-API_KEY_ID="DCW4DGNGQ4"
-API_ISSUER_ID="69a6de85-d1b5-47e3-e053-5b8c7c11a4d1"
-API_KEY_PATH="$HOME/.appstoreconnect/private_keys/AuthKey_DCW4DGNGQ4.p8"
+# ASC API credentials live in scripts/asc-config.env (gitignored).
+# Copy scripts/asc-config.env.example and fill in.
+ASC_CONFIG="$PROJECT_DIR/scripts/asc-config.env"
+if [ ! -f "$ASC_CONFIG" ]; then
+  echo "error: $ASC_CONFIG missing. Copy from scripts/asc-config.env.example and fill in." >&2
+  exit 1
+fi
+# shellcheck source=/dev/null
+source "$ASC_CONFIG"
+API_KEY_ID="${ASC_KEY_ID:?ASC_KEY_ID not set in $ASC_CONFIG}"
+API_ISSUER_ID="${ASC_ISSUER_ID:?ASC_ISSUER_ID not set in $ASC_CONFIG}"
+API_KEY_PATH="${ASC_KEY_PATH:-$HOME/.appstoreconnect/private_keys/AuthKey_${API_KEY_ID}.p8}"
 
 APP_ID="1513074382"
 BETA_GROUP_ID="fb27a205-8fd8-4e99-a95e-f612e990bed8"  # ShypQuick Testers (external)
